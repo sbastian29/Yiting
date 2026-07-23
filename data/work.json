@@ -1,0 +1,238 @@
+[
+  {
+    "id": "W001",
+    "slug": "vitrum",
+    "title": "VITRUM",
+    "year": "2025",
+    "role": {
+      "es": "3D Texture & Weapons Artist",
+      "en": "3D Texture & Weapons Artist",
+      "zh": "3D 贴图与武器美术"
+    },
+    "award": {
+      "es": "🥇 1º Gala UCM",
+      "en": "🥇 1st UCM Gala",
+      "zh": "🥇 UCM 第一名"
+    },
+    "tools": "Maya · Substance · UE5",
+    "tags": [
+      "videogame",
+      "hard-surface",
+      "weapons",
+      "award"
+    ],
+    "media": {
+      "hero": null,
+      "breakdown": null
+    },
+    "description": {
+      "es": "Texturizado de armas y props para el proyecto ganador de la Gala de Videojuegos UCM 2025.",
+      "en": "Weapon and prop texturing for the winner of the 2025 UCM Videogame Gala.",
+      "zh": "为 2025 年 UCM 游戏盛会获奖项目制作武器与道具的贴图。"
+    },
+    "tool": "Maya"
+  },
+  {
+    "id": "W002",
+    "slug": "elemental-odyssey",
+    "title": "Elemental Odyssey",
+    "year": "2024",
+    "role": {
+      "es": "Modeler · Texture · Lighting",
+      "en": "Modeler · Texture · Lighting",
+      "zh": "建模 · 贴图 · 灯光"
+    },
+    "award": {
+      "es": "🥇 1º HackJam",
+      "en": "🥇 1st HackJam",
+      "zh": "🥇 HackJam 第一名"
+    },
+    "tools": "Blender · Substance · Unity",
+    "tags": [
+      "game-jam",
+      "stylised",
+      "award"
+    ],
+    "media": {
+      "hero": null,
+      "breakdown": null
+    },
+    "description": {
+      "es": "48 horas para construir un mundo elemental estilizado. Modelado, texturizado e iluminación.",
+      "en": "48 hours to build a stylised elemental world. Modeling, texturing and lighting.",
+      "zh": "48 小时打造一个风格化的元素世界。建模、贴图与灯光。"
+    },
+    "tool": "Blender"
+  },
+  {
+    "id": "W003",
+    "slug": "bankinter-vp",
+    "title": "Bankinter VP",
+    "year": "2024",
+    "role": {
+      "es": "3D Artist · Virtual Production",
+      "en": "3D Artist · Virtual Production",
+      "zh": "3D 美术 · 虚拟制作"
+    },
+    "award": null,
+    "tools": "UE5 · Virtual Production",
+    "tags": [
+      "virtual-production",
+      "realtime",
+      "commercial"
+    ],
+    "media": {
+      "hero": null,
+      "breakdown": null
+    },
+    "description": {
+      "es": "Producción virtual en tiempo real con Unreal Engine 5 sobre LED wall.",
+      "en": "Realtime virtual production with Unreal Engine 5 on an LED wall.",
+      "zh": "在 LED 墙上使用 Unreal Engine 5 进行实时虚拟制作。"
+    },
+    "tool": "Unreal"
+  },
+  {
+    "id": "W004",
+    "slug": "sigurds-fate",
+    "title": "Sigurd's Fate",
+    "year": "2024",
+    "role": {
+      "es": "Stylised Props & Texture",
+      "en": "Stylised Props & Texture",
+      "zh": "风格化道具与贴图"
+    },
+    "award": null,
+    "tools": "Blender · 3D Coat",
+    "tags": [
+      "stylised",
+      "props"
+    ],
+    "media": {
+      "hero": null,
+      "breakdown": null
+    },
+    "description": {
+      "es": "Props estilizados para una historia nórdica. Silueta exagerada al servicio del relato.",
+      "en": "Stylised props for a Nordic tale. Exaggerated silhouettes serving the story.",
+      "zh": "为北欧故事制作的风格化道具。夸张的轮廓服务于叙事。"
+    },
+    "tool": "3D-Coat"
+  },
+  {
+    "id": "W005",
+    "slug": "stylised-environment",
+    "title": "Stylised Environment",
+    "year": "2024",
+    "role": {
+      "es": "Solo · Modeling · Lighting",
+      "en": "Solo · Modeling · Lighting",
+      "zh": "独立 · 建模 · 灯光"
+    },
+    "award": null,
+    "tools": "Maya · Marmoset",
+    "tags": [
+      "stylised",
+      "environment",
+      "solo"
+    ],
+    "media": {
+      "hero": null,
+      "breakdown": null
+    },
+    "description": {
+      "es": "Entorno estilizado completo, modelado e iluminado en solitario.",
+      "en": "Full stylised environment, modeled and lit solo.",
+      "zh": "完整的风格化环境，独立完成建模与灯光。"
+    },
+    "tool": "Marmoset"
+  },
+  {
+    "id": "W006",
+    "slug": "ice-axe",
+    "title": "Stylised Ice Axe",
+    "year": "2024",
+    "role": {
+      "es": "Solo · Modeling · Texturing",
+      "en": "Solo · Modeling · Texturing",
+      "zh": "独立 · 建模 · 贴图"
+    },
+    "award": null,
+    "tools": "Blender · Substance",
+    "tags": [
+      "stylised",
+      "hard-surface",
+      "prop"
+    ],
+    "media": {
+      "hero": null,
+      "breakdown": null
+    },
+    "description": {
+      "es": "Hacha de hielo estilizada. Ejercicio de hard-surface con paleta congelada.",
+      "en": "Stylised ice axe. Hard-surface exercise with a frozen palette.",
+      "zh": "风格化的冰镐。冷色调下的硬表面练习。"
+    },
+    "tool": "Blender"
+  },
+  {
+    "id": "W007",
+    "slug": "urban-jam",
+    "title": "Urban HackJam",
+    "year": "2023",
+    "role": {
+      "es": "Texture Artist · 3D Modeler",
+      "en": "Texture Artist · 3D Modeler",
+      "zh": "贴图美术 · 3D 建模"
+    },
+    "award": {
+      "es": "🥈 2º HackJam",
+      "en": "🥈 2nd HackJam",
+      "zh": "🥈 HackJam 第二名"
+    },
+    "tools": "Blender · Substance",
+    "tags": [
+      "game-jam",
+      "urban",
+      "award"
+    ],
+    "media": {
+      "hero": null,
+      "breakdown": null
+    },
+    "description": {
+      "es": "Game jam de urbanismo. Texturizado rápido bajo presión cronómetro.",
+      "en": "Urbanism game jam. Fast texturing under stopwatch pressure.",
+      "zh": "城市主题 Game Jam。在计时压力下进行快速贴图。"
+    },
+    "tool": "Substance Painter"
+  },
+  {
+    "id": "W008",
+    "slug": "mapping-me",
+    "title": "Mapping Me Festival",
+    "year": "2024",
+    "role": {
+      "es": "Visual Creator · Video Mapping",
+      "en": "Visual Creator · Video Mapping",
+      "zh": "视觉创作者 · 视频映射"
+    },
+    "award": null,
+    "tools": "TouchDesigner · AE",
+    "tags": [
+      "video-mapping",
+      "festival",
+      "live"
+    ],
+    "media": {
+      "hero": null,
+      "breakdown": null
+    },
+    "description": {
+      "es": "Creación visual para el festival MappingMe!. Proyecciones sobre arquitectura.",
+      "en": "Visual creation for the MappingMe! festival. Projections on architecture.",
+      "zh": "为 MappingMe! 节制作视觉。建筑上的投影映射。"
+    },
+    "tool": "Unity"
+  }
+]

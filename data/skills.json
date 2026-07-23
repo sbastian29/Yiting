@@ -1,0 +1,25 @@
+{
+  "hard": [
+    { "id": "maya",              "name": "Maya",               "category": "Modeling",  "logo": "assets/logos/maya.png",              "years": 5, "projects": ["vitrum", "stylised-environment", "sigurds-fate"], "col": 2, "row": 2 },
+    { "id": "blender",           "name": "Blender",            "category": "Modeling",  "logo": "assets/logos/blender.png",           "years": 4, "projects": ["elemental-odyssey", "ice-axe", "urban-jam"], "col": 2, "row": 1 },
+    { "id": "substance-painter", "name": "Substance Painter",  "category": "Texturing", "logo": "assets/logos/substance-painter.png", "years": 4, "projects": ["vitrum", "elemental-odyssey", "urban-jam"], "col": 1, "row": 2 },
+    { "id": "3d-coat",           "name": "3D Coat",            "category": "Texturing", "logo": "assets/logos/3d-coat.png",           "years": 2, "projects": ["sigurds-fate"], "col": 1, "row": 1 },
+    { "id": "unreal",            "name": "Unreal Engine 5",    "category": "Real-time", "logo": "assets/logos/unreal.png",            "years": 3, "projects": ["vitrum", "bankinter-vp"], "col": 2, "row": 1 },
+    { "id": "unity",             "name": "Unity",              "category": "Real-time", "logo": "assets/logos/unity.png",             "years": 2, "projects": ["elemental-odyssey"], "col": 1, "row": 1 },
+    { "id": "marmoset",          "name": "Marmoset Toolbag",   "category": "Rendering", "logo": "assets/logos/marmoset.png",          "years": 3, "projects": ["stylised-environment"], "col": 2, "row": 1 }
+  ],
+  "soft": [
+    { "id": "art-direction", "name": "Art Direction",           "logo": "/assets/soft/art-direction.png", "symbol": "\u25c6", "years": 3, "projects": ["vitrum", "elemental-odyssey"], "col": 2, "row": 2 },
+    { "id": "collaboration", "name": "Pipeline Collaboration",  "logo": "/assets/soft/collaboration.png", "symbol": "\u2b21", "years": 5, "projects": ["bankinter-vp", "vitrum"], "col": 1, "row": 1 },
+    { "id": "iteration",     "name": "Iteration under Feedback","logo": "/assets/soft/iteration.png",     "symbol": "\u2206", "years": 5, "projects": ["sigurds-fate"], "col": 2, "row": 1 },
+    { "id": "adaptability",  "name": "Adaptability",            "logo": "/assets/soft/adaptability.png",  "symbol": "\u2726", "years": 5, "projects": [], "col": 1, "row": 2 },
+    { "id": "detail",        "name": "Attention to Detail",     "logo": "/assets/soft/detail.png",        "symbol": "\u00b6", "years": 5, "projects": ["ice-axe", "stylised-environment"], "col": 1, "row": 1 },
+    { "id": "multilingual",  "name": "Multilingual Pipeline",   "logo": "/assets/soft/multilingual.png",  "symbol": "\u2020", "years": 4, "projects": ["mapping-me"], "col": 2, "row": 1 }
+  ],
+  "specialities": ["HardSurface", "SoftSurface", "Stylised", "VirtualProduction"],
+  "languages": [
+    { "code": "ES", "name": "Español", "level": 1.0,  "tag": { "es": "nativo",         "en": "native",         "zh": "母语" } },
+    { "code": "EN", "name": "English", "level": 0.85, "tag": { "es": "fluido",         "en": "fluent",         "zh": "流利" } },
+    { "code": "ZH", "name": "中文",     "level": 0.6,  "tag": { "es": "conversacional", "en": "conversational", "zh": "会话" } }
+  ]
+}

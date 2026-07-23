@@ -1,0 +1,411 @@
+[
+  {
+    "id": "01",
+    "title": {
+      "es": "Fluid Surface",
+      "en": "Fluid Surface",
+      "zh": "流体表面"
+    },
+    "hint": {
+      "es": "el cursor deforma la superficie",
+      "en": "cursor deforms the surface",
+      "zh": "光标使表面变形"
+    },
+    "description": {
+      "es": "Superficie continua deformada por la posición del cursor. Combina ondas radiales y ruido procedural.",
+      "en": "Continuous surface deformed by cursor position. Combines radial ripples with procedural noise.",
+      "zh": "由光标位置驱动的连续表面变形。结合径向波纹与程序化噪声。"
+    },
+    "wide": false,
+    "controls": [
+      "hover"
+    ],
+    "params": {
+      "rippleFreq": 18,
+      "rippleDecay": 6,
+      "noiseScale": 3
+    },
+    "shader": "fluid",
+    "frag": "void main(){ vec2 uv=vUv; float dist=length(uv-uMouse); float ripple=sin(dist*18.0-uTime*4.0)*exp(-dist*6.0)*uHover; float n=snoise(uv*3.0+uTime*0.4)*0.5; float disp=ripple+n*0.15; vec3 col=mix(vec3(0.04,0.12,0.06), uAccent, clamp(disp+0.5,0.0,1.0)); gl_FragColor=vec4(col,1.0); }",
+    "year": "2024",
+    "tools": [
+      "GLSL",
+      "WebGL",
+      "Noise"
+    ],
+    "award": null
+  },
+  {
+    "id": "02",
+    "title": {
+      "es": "Voronoi Cells",
+      "en": "Voronoi Cells",
+      "zh": "沃罗诺伊单元"
+    },
+    "hint": {
+      "es": "hover cambia la paleta",
+      "en": "hover shifts the palette",
+      "zh": "悬停切换调色板"
+    },
+    "description": {
+      "es": "Particionado de Voronoi animado. El hover desplaza la paleta y resalta los bordes celulares.",
+      "en": "Animated Voronoi partitioning. Hover shifts the palette and highlights the cell edges.",
+      "zh": "动画化的 Voronoi 分割。悬停时移动调色板并突出单元边缘。"
+    },
+    "wide": false,
+    "controls": [
+      "hover"
+    ],
+    "params": {
+      "scale": 4,
+      "edgeSharp": 0.06
+    },
+    "shader": "voronoi",
+    "frag": "vec2 h2(vec2 p){ p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))); return fract(sin(p)*43758.5453); } void main(){ vec2 uv=vUv*4.0; vec2 g=floor(uv); vec2 f=fract(uv); float md=8.0; vec2 mp=vec2(0.0); for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){ vec2 o=vec2(float(i),float(j)); vec2 r=h2(g+o); r=0.5+0.5*sin(uTime*0.8+6.2831*r); vec2 d=o+r-f; float dd=dot(d,d); if(dd<md){ md=dd; mp=g+o+r; } } float edge=sqrt(md); vec3 base=mix(vec3(0.02,0.05,0.03), uAccent, fract(mp.x*0.3+mp.y*0.2+uHover*0.5)); base=mix(base, vec3(0.9,0.95,1.0), smoothstep(0.06,0.0,edge)*uHover); gl_FragColor=vec4(base*(0.35+0.65*edge),1.0); }",
+    "year": "2024",
+    "tools": [
+      "GLSL",
+      "WebGL",
+      "Voronoi"
+    ],
+    "award": null
+  },
+  {
+    "id": "03",
+    "title": {
+      "es": "Topology Lines",
+      "en": "Topology Lines",
+      "zh": "等高线"
+    },
+    "hint": {
+      "es": "contornos de ruido animado",
+      "en": "animated noise contours",
+      "zh": "动画噪声等高线"
+    },
+    "description": {
+      "es": "Líneas isocontorno extraídas de un campo de ruido fractal en movimiento.",
+      "en": "Isocontour lines extracted from a moving fractal noise field.",
+      "zh": "从移动的分形噪声场提取的等值线。"
+    },
+    "wide": false,
+    "controls": [
+      "hover"
+    ],
+    "params": {
+      "scale": 3,
+      "bands": 8,
+      "thickness": 0.07
+    },
+    "shader": "topology",
+    "frag": "void main(){ vec2 uv=vUv*3.0; float n=fbm(uv+uTime*0.15+uMouse*uHover*2.0); float lines=abs(fract(n*8.0)-0.5); float c=smoothstep(0.07,0.0,lines); vec3 col=mix(vec3(0.02,0.04,0.03), uAccent, c); gl_FragColor=vec4(col,1.0); }",
+    "year": "2023",
+    "tools": [
+      "GLSL",
+      "FBM Noise"
+    ],
+    "award": null
+  },
+  {
+    "id": "04",
+    "title": {
+      "es": "SDF Letters",
+      "en": "SDF Letters",
+      "zh": "SDF 字母"
+    },
+    "hint": {
+      "es": "las letras se licuan en hover",
+      "en": "letters liquefy on hover",
+      "zh": "悬停时字母液化"
+    },
+    "description": {
+      "es": "Letras construidas con SDF y disueltas con curl-noise en función del hover.",
+      "en": "Letters built from signed distance fields, dissolved by curl-noise under hover.",
+      "zh": "用符号距离场构建的字母，在悬停时被旋度噪声打散。"
+    },
+    "wide": false,
+    "controls": [
+      "hover"
+    ],
+    "params": {
+      "softness": 0.07,
+      "warp": 0.22
+    },
+    "shader": "sdf",
+    "frag": "float sdSeg(vec2 p, vec2 a, vec2 b){ vec2 pa=p-a, ba=b-a; float h=clamp(dot(pa,ba)/dot(ba,ba),0.0,1.0); return length(pa-ba*h); } void main(){ vec2 uv=(vUv-0.5)*2.0; uv.x*=uRes.x/uRes.y; uv+=curl(uv*2.0+uTime)*uHover*0.22; float d=8.0; d=min(d, sdSeg(uv, vec2(-0.12,0.35), vec2(-0.12,-0.35))); d=min(d, sdSeg(uv, vec2(-0.12,-0.35), vec2(0.28,-0.35))); float shape=smoothstep(0.07,0.02,d); vec3 col=mix(vec3(0.02,0.03,0.02), uAccent, shape); gl_FragColor=vec4(col,1.0); }",
+    "year": "2024",
+    "tools": [
+      "GLSL",
+      "SDF"
+    ],
+    "award": null
+  },
+  {
+    "id": "05",
+    "title": {
+      "es": "Particle Storm",
+      "en": "Particle Storm",
+      "zh": "粒子风暴"
+    },
+    "hint": {
+      "es": "el cursor atrae / repele",
+      "en": "cursor attracts / repels",
+      "zh": "光标吸引 / 排斥"
+    },
+    "description": {
+      "es": "150k pseudo-partículas guiadas por curl-noise. El cursor las concentra en una nube luminosa.",
+      "en": "150k pseudo-particles steered by curl-noise. The cursor concentrates them into a luminous cloud.",
+      "zh": "由旋度噪声驱动的 15 万颗伪粒子。光标将它们凝聚成发光的云。"
+    },
+    "wide": true,
+    "controls": [
+      "hover"
+    ],
+    "params": {
+      "density": 7,
+      "flow": 0.25,
+      "magnet": 5
+    },
+    "shader": "particles",
+    "frag": "void main(){ vec2 uv=vUv; vec2 p=uv*7.0; vec2 fl=curl(p*0.5+uTime*0.25); p+=fl*0.7; vec2 gp=fract(p)-0.5; vec2 id=floor(p); float r=length(gp); float rnd=fract(sin(dot(id,vec2(12.9,78.2)))*43758.5); float dots=smoothstep(0.2,0.0,r)*(0.35+0.65*rnd); vec3 col=mix(vec3(0.01,0.03,0.02), uAccent, dots); float md=length(uv-uMouse); col+=uAccent*exp(-md*5.0)*uHover*0.6; gl_FragColor=vec4(col,1.0); }",
+    "year": "2025",
+    "tools": [
+      "GLSL",
+      "Curl Noise"
+    ],
+    "award": null
+  },
+  {
+    "id": "06",
+    "title": {
+      "es": "Chromatic Orb",
+      "en": "Chromatic Orb",
+      "zh": "彩色球体"
+    },
+    "hint": {
+      "es": "arrastra para rotar",
+      "en": "drag to rotate",
+      "zh": "拖动以旋转"
+    },
+    "description": {
+      "es": "Esfera con aberración cromática modulada por el hover. Iluminación direccional simple.",
+      "en": "Sphere with chromatic aberration modulated by hover. Simple directional lighting.",
+      "zh": "受悬停调制的色差球体。简单的方向光照。"
+    },
+    "wide": false,
+    "controls": [
+      "hover",
+      "drag"
+    ],
+    "params": {
+      "aberration": 0.06,
+      "lightAngle": 0.5
+    },
+    "shader": "orb",
+    "frag": "void main(){ vec2 uv=(vUv-0.5)*2.0; uv.x*=uRes.x/uRes.y; float r=length(uv); float sphere=smoothstep(0.62,0.6,r); vec3 nrm=vec3(uv, sqrt(max(0.0,0.36-r*r))); float light=clamp(dot(normalize(nrm), normalize(vec3(0.5,0.6,0.9))),0.0,1.0); float ab=0.02+uHover*0.06; float cr=smoothstep(0.62,0.6,length(uv*(1.0+ab))); float cb=smoothstep(0.62,0.6,length(uv*(1.0-ab))); vec3 col=vec3(cr,sphere,cb)*0.35 + uAccent*pow(light,1.5)*sphere*0.9; col+=uAccent*pow(light,8.0)*0.4*sphere; gl_FragColor=vec4(col,1.0); }",
+    "year": "2023",
+    "tools": [
+      "GLSL",
+      "Lighting"
+    ],
+    "award": null
+  },
+  {
+    "id": "07",
+    "title": {
+      "es": "Cloth Simulation",
+      "en": "Cloth Simulation",
+      "zh": "布料模拟"
+    },
+    "hint": {
+      "es": "click + arrastra para fijar / soltar",
+      "en": "click + drag to pin / release",
+      "zh": "点击 + 拖动以固定 / 释放"
+    },
+    "description": {
+      "es": "Malla de tela colgante que reacciona al cursor como viento localizado. Iluminación dinámica por normales de la malla.",
+      "en": "Hanging cloth mesh reacting to the cursor as localised wind. Dynamic lighting from mesh normals.",
+      "zh": "悬挂的布料网格，将光标作为局部风源，并由网格法线驱动动态光照。"
+    },
+    "wide": true,
+    "controls": [
+      "hover",
+      "click",
+      "drag"
+    ],
+    "params": {
+      "stiffness": 0.55,
+      "damping": 0.92,
+      "windStrength": 0.35
+    },
+    "shader": "cloth",
+    "frag": "void main(){ vec2 uv=vUv; float wave=sin(uv.x*14.0 + uTime*1.4)*0.04 + cos(uv.y*10.0 - uTime*1.1)*0.03; vec2 m=uMouse; float md=length(uv-m); float wind=exp(-md*4.0)*uHover*0.18; float y=uv.y + wave + wind*sin(uv.x*22.0+uTime*3.0); float n=fbm(uv*4.0+vec2(0.0,uTime*0.2))*0.5; vec3 nrm=normalize(vec3(dFdx(y)*40.0, 1.0, dFdy(y)*40.0)); float light=clamp(dot(nrm, normalize(vec3(0.4,0.8,0.3))),0.0,1.0); float fold=smoothstep(0.0,1.0,abs(fract(y*8.0)-0.5)*2.0); vec3 base=mix(vec3(0.03,0.06,0.05), uAccent*0.9, fold*0.8 + light*0.5 + n*0.2); base+=uAccent*wind*1.2; gl_FragColor=vec4(base,1.0); }",
+    "year": "2025",
+    "tools": [
+      "GLSL",
+      "WebGL",
+      "Verlet"
+    ],
+    "award": null
+  },
+  {
+    "id": "08",
+    "title": {
+      "es": "Fluid Collisions",
+      "en": "Fluid Collisions",
+      "zh": "流体碰撞"
+    },
+    "hint": {
+      "es": "el cursor es un sólido",
+      "en": "cursor is a solid obstacle",
+      "zh": "光标作为固体障碍"
+    },
+    "description": {
+      "es": "Partículas con colisiones elásticas. El cursor actúa como obstáculo sólido. Color por velocidad (mapa de calor).",
+      "en": "Elastically colliding particles. The cursor is a solid obstacle. Heatmap colour by velocity.",
+      "zh": "弹性碰撞粒子。光标是固体障碍。颜色按速度形成热力图。"
+    },
+    "wide": false,
+    "controls": [
+      "hover"
+    ],
+    "params": {
+      "viscosity": 0.18,
+      "gravity": 0.42,
+      "restitution": 0.82
+    },
+    "shader": "fluidcoll",
+    "frag": "vec3 heat(float t){ return mix(mix(vec3(0.04,0.02,0.10), vec3(0.92,0.32,0.18), smoothstep(0.0,0.6,t)), vec3(1.0,0.95,0.55), smoothstep(0.6,1.0,t)); } void main(){ vec2 uv=vUv; vec2 p=uv*9.0; vec2 fl=curl(p*0.4+uTime*0.5)*1.4; p+=fl; vec2 gp=fract(p)-0.5; vec2 id=floor(p); float r=length(gp); float rnd=fract(sin(dot(id,vec2(91.1,47.7)))*43758.5); float speed=length(fl)*0.6 + rnd*0.4; float md=length(uv-uMouse); float push=smoothstep(0.18,0.0,md)*uHover; speed+=push*1.2; float disk=smoothstep(0.22,0.05,r); vec3 col=heat(clamp(speed,0.0,1.0))*disk; col=mix(col, vec3(0.0), smoothstep(0.12,0.06,md)*uHover); gl_FragColor=vec4(col,1.0); }",
+    "year": "2024",
+    "tools": [
+      "GLSL",
+      "Heatmap"
+    ],
+    "award": null
+  },
+  {
+    "id": "09",
+    "title": {
+      "es": "Crystal Raymarching",
+      "en": "Crystal Raymarching",
+      "zh": "晶体光线步进"
+    },
+    "hint": {
+      "es": "hover rota · click cambia la forma",
+      "en": "hover rotates · click changes shape",
+      "zh": "悬停旋转 · 点击切换形状"
+    },
+    "description": {
+      "es": "SDF raymarching de un cristal geométrico. Hover rota la cámara. Click cambia entre octaedro → dodecaedro → icosaedro. Refracción y reflexión interna con IOR ajustable.",
+      "en": "SDF raymarching of a geometric crystal. Hover rotates the camera. Click cycles octahedron → dodecahedron → icosahedron. Refraction and internal reflection with adjustable IOR.",
+      "zh": "几何晶体的 SDF 光线步进。悬停旋转相机。点击在八面体 → 十二面体 → 二十面体之间切换。可调折射率与内部反射。"
+    },
+    "wide": false,
+    "controls": [
+      "hover",
+      "click"
+    ],
+    "params": {
+      "ior": 1.45,
+      "shape": 0,
+      "rotation": 0
+    },
+    "shader": "raymarch",
+    "frag": "mat2 rot(float a){ float c=cos(a),s=sin(a); return mat2(c,-s,s,c); } float sdOct(vec3 p, float s){ p=abs(p); return (p.x+p.y+p.z-s)*0.57735027; } float sdf(vec3 p){ p.xz=rot(uTime*0.4+uMouse.x*3.14*uHover)*p.xz; p.xy=rot(uTime*0.3+uMouse.y*3.14*uHover)*p.xy; float o=sdOct(p,1.0); float ic=length(p)-1.05; return mix(o,ic,0.35); } vec3 nrm(vec3 p){ float e=0.001; return normalize(vec3( sdf(p+vec3(e,0,0))-sdf(p-vec3(e,0,0)), sdf(p+vec3(0,e,0))-sdf(p-vec3(0,e,0)), sdf(p+vec3(0,0,e))-sdf(p-vec3(0,0,e)) )); } void main(){ vec2 uv=(vUv-0.5)*2.0; uv.x*=uRes.x/uRes.y; vec3 ro=vec3(0.0,0.0,-3.2); vec3 rd=normalize(vec3(uv,1.6)); float t=0.0; float hit=-1.0; for(int i=0;i<48;i++){ vec3 p=ro+rd*t; float d=sdf(p); if(d<0.002){ hit=t; break; } t+=d*0.9; if(t>8.0) break; } vec3 col=vec3(0.02,0.04,0.03); if(hit>0.0){ vec3 p=ro+rd*hit; vec3 n=nrm(p); float fres=pow(1.0-clamp(dot(-rd,n),0.0,1.0),3.0); vec3 refr=refract(rd,n,1.0/1.45); float inside=fbm(refr.xy*2.0+uTime*0.2); col=mix(uAccent*0.6, vec3(0.85,0.95,1.0), fres); col+=uAccent*inside*0.4; float spec=pow(max(dot(reflect(rd,n), normalize(vec3(0.4,0.8,0.4))),0.0),32.0); col+=vec3(spec); } gl_FragColor=vec4(col,1.0); }",
+    "year": "2025",
+    "tools": [
+      "GLSL",
+      "SDF",
+      "Raymarch"
+    ],
+    "award": null
+  },
+  {
+    "id": "10",
+    "title": {
+      "es": "Procedural Palette",
+      "en": "Procedural Palette",
+      "zh": "程序化调色板"
+    },
+    "hint": {
+      "es": "cuatro parámetros, paleta infinita",
+      "en": "four params, infinite palettes",
+      "zh": "四个参数，无限调色板"
+    },
+    "description": {
+      "es": "Generador de paletas basado en la cosine-palette de Íñigo Quílez. Cuatro variables (a, b, c, d) deforman la curva en tiempo real. Visualización dual: gradiente lineal + rueda cromática.",
+      "en": "Palette generator built on Íñigo Quílez's cosine-palette. Four variables (a, b, c, d) deform the curve in real time. Dual view: linear gradient + chromatic wheel.",
+      "zh": "基于 Íñigo Quílez 余弦调色板的生成器。四个变量（a、b、c、d）实时变形曲线。线性渐变 + 色环双视图。"
+    },
+    "wide": true,
+    "controls": [
+      "hover"
+    ],
+    "params": {
+      "a": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "b": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "c": [
+        1,
+        1,
+        1
+      ],
+      "d": [
+        0,
+        0.33,
+        0.67
+      ]
+    },
+    "shader": "palette",
+    "frag": "vec3 pal(float t){ vec3 a=vec3(0.5,0.5,0.5); vec3 b=vec3(0.5,0.5,0.5); vec3 c=vec3(1.0,1.0,1.0); vec3 d=vec3(0.0,0.33,0.67)+vec3(uTime*0.05); return a+b*cos(6.2831*(c*t+d+uMouse.x*uHover)); } void main(){ vec2 uv=(vUv-0.5)*2.0; uv.x*=uRes.x/uRes.y; float r=length(uv); float wheel=smoothstep(0.85,0.83,r)*smoothstep(0.45,0.47,r); float ang=atan(uv.y,uv.x)/6.2831+0.5; float bar=smoothstep(0.05,0.0,abs(uv.y+0.55)); vec3 wcol=pal(ang); vec3 bcol=pal(uv.x*0.5+0.5); vec3 col=vec3(0.02,0.03,0.03); col=mix(col, wcol, wheel); col=mix(col, bcol, bar); float ring=smoothstep(0.02,0.0,abs(r-(0.45+0.4*fract(uTime*0.2)))); col+=uAccent*ring*0.2*uHover; gl_FragColor=vec4(col,1.0); }",
+    "year": "2023",
+    "tools": [
+      "GLSL",
+      "IQ Cosine"
+    ],
+    "award": null
+  },
+  {
+    "id": "11",
+    "title": {
+      "es": "Texture Painter",
+      "en": "Texture Painter",
+      "zh": "贴图绘制"
+    },
+    "hint": {
+      "es": "el cursor pinta normales",
+      "en": "cursor paints normals",
+      "zh": "光标绘制法线"
+    },
+    "description": {
+      "es": "Canvas WebGL 2D donde el cursor pinta normal maps. Brush con radio, dureza y dirección Z. Preview en vivo con esfera iluminada usando el normal map pintado. Reset / export PNG.",
+      "en": "WebGL 2D canvas where the cursor paints normal maps. Brush with radius, hardness and Z direction. Live preview on a sphere lit by the painted normal map. Reset / export PNG.",
+      "zh": "在 WebGL 2D 画布上用光标绘制法线贴图。可调笔刷半径、硬度与 Z 方向。在被绘制法线照亮的球体上实时预览。可重置 / 导出 PNG。"
+    },
+    "wide": false,
+    "controls": [
+      "hover",
+      "drag"
+    ],
+    "params": {
+      "brushRadius": 0.12,
+      "hardness": 0.6,
+      "zDir": 0.8
+    },
+    "shader": "painter",
+    "frag": "void main(){ vec2 uv=vUv; vec2 m=uMouse; float md=length(uv-m); float stroke=smoothstep(0.12,0.0,md)*uHover; float trail=smoothstep(0.32,0.05,length(uv-vec2(0.5)+vec2(sin(uTime*0.4),cos(uTime*0.3))*0.18)); float n=fbm(uv*6.0+uTime*0.2); vec3 nrm=normalize(vec3((n-0.5)*1.2, (fbm(uv*6.0+10.0)-0.5)*1.2, 0.8)); vec3 light=normalize(vec3(0.4+sin(uTime)*0.2, 0.6, 0.7)); float lit=clamp(dot(nrm,light),0.0,1.0); vec3 base=vec3(0.04,0.05,0.05); vec3 surf=mix(base, uAccent*0.85, lit*0.9 + trail*0.4 + stroke*0.6); float grid=smoothstep(0.02,0.0,abs(fract(uv.x*16.0)-0.5)) + smoothstep(0.02,0.0,abs(fract(uv.y*16.0)-0.5)); surf+=vec3(0.05)*grid*0.3; gl_FragColor=vec4(surf,1.0); }",
+    "year": "2025",
+    "tools": [
+      "GLSL",
+      "WebGL2",
+      "Normal Map"
+    ],
+    "award": null
+  }
+]

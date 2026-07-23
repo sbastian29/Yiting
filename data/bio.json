@@ -1,0 +1,41 @@
+{
+  "name": {
+    "first": "Yi-Ting",
+    "last": "Yang Tang",
+    "nick": "Lisa"
+  },
+  "role": {
+    "es": "3D Modeling & Texturing Artist",
+    "en": "3D Modeling & Texturing Artist",
+    "zh": "3D 建模与贴图艺术家"
+  },
+  "city": "Madrid",
+  "location": {
+    "es": "Madrid, España (UTC+1)",
+    "en": "Madrid, Spain (UTC+1)",
+    "zh": "西班牙马德里（UTC+1）"
+  },
+  "available": true,
+  "about": {
+    "quote": {
+      "es": "El oficio se encuentra con la narrativa — cada superficie cuenta una historia.",
+      "en": "Craftsmanship meets storytelling — every surface has a story.",
+      "zh": "当工艺遇见叙事——每一个表面都有一个故事。"
+    },
+    "who": {
+      "es": "Yi-Ting Yang Tang — Lisa. Artista 3D de modelado y texturizado en Madrid. Trilingüe, formada entre el MIT y Cambridge con la Beca Amancio Ortega. Alumni de Cartoon Springboard 2024 y 2025.",
+      "en": "Yi-Ting Yang Tang — Lisa. 3D modeling & texturing artist based in Madrid. Trilingual, trained between MIT and Cambridge on the Amancio Ortega Scholarship. Cartoon Springboard alumni 2024 & 2025.",
+      "zh": "Yi-Ting Yang Tang——Lisa。常驻马德里的 3D 建模与贴图艺术家。精通三种语言，凭 Amancio Ortega 奖学金在 MIT 与剑桥求学。Cartoon Springboard 2024 与 2025 校友。"
+    },
+    "who_extended": {
+      "es": "Empecé entendiendo las superficies como materia: cómo la luz se posa en el metal desgastado, cómo la piedra estilizada exagera su silueta. Hoy llevo esa obsesión por el detalle del modelado de hard-surface a la producción virtual en tiempo real.",
+      "en": "I started by understanding surfaces as matter: how light settles on worn metal, how stylised stone exaggerates its silhouette. Today I carry that obsession with detail from hard-surface modeling into real-time virtual production.",
+      "zh": "我从把表面理解为物质开始：光如何落在磨损的金属上，风格化的石头如何夸张它的轮廓。如今我把这种对细节的执着，从硬表面建模带入实时虚拟制作。"
+    },
+    "how": {
+      "es": "Hard y soft surface, estilizado y producción virtual con Unreal Engine 5. El oficio al servicio de la historia.",
+      "en": "Hard and soft surface, stylised and virtual production with Unreal Engine 5. Craft in service of the story.",
+      "zh": "硬表面与软表面、风格化，以及基于 Unreal Engine 5 的虚拟制作。让工艺服务于故事。"
+    }
+  }
+}

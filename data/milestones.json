@@ -1,0 +1,92 @@
+[
+  {
+    "year": "2020",
+    "type": "program",
+    "title": {
+      "es": "MIT Full Ahead Immersion",
+      "en": "MIT Full Ahead Immersion",
+      "zh": "MIT Full Ahead 沉浸课程"
+    },
+    "org": "Fundación Amancio Ortega",
+    "description": {
+      "es": "Inmersión en innovación y tecnología en el MIT, becada por la Fundación Amancio Ortega — el primer chispazo entre el oficio técnico y la creatividad.",
+      "en": "Innovation and technology immersion at MIT on the Amancio Ortega Foundation scholarship — the first spark between technical craft and creativity.",
+      "zh": "凭 Amancio Ortega 基金会奖学金在 MIT 进行创新与技术沉浸学习——技术工艺与创意的第一次火花。"
+    }
+  },
+  {
+    "year": "2021",
+    "type": "program",
+    "title": {
+      "es": "Cambridge Ignite",
+      "en": "Cambridge Ignite",
+      "zh": "剑桥 Ignite 项目"
+    },
+    "org": "Fundación Amancio Ortega",
+    "description": {
+      "es": "Programa de liderazgo y emprendimiento en Cambridge, de nuevo con beca de la Fundación. Aprender a contar historias antes de modelarlas.",
+      "en": "Leadership and entrepreneurship programme at Cambridge, again on the Foundation scholarship. Learning to tell stories before modeling them.",
+      "zh": "在剑桥参加领导力与创业项目，再次获基金会奖学金。先学会讲故事，再去建模。"
+    }
+  },
+  {
+    "year": "2022",
+    "type": "program",
+    "title": {
+      "es": "Ford Impulsando Sueños",
+      "en": "Ford Impulsando Sueños",
+      "zh": "福特 Impulsando Sueños"
+    },
+    "org": "AIPC PANDORA",
+    "description": {
+      "es": "Beca de talento joven que financió mi formación creativa justo antes de dar el salto definitivo al 3D.",
+      "en": "Young-talent grant that funded my creative training right before the definitive leap into 3D.",
+      "zh": "资助我在正式投身 3D 前创意训练的青年人才奖学金。"
+    }
+  },
+  {
+    "year": "2024",
+    "type": "event",
+    "title": {
+      "es": "Cartoon Springboard · Auxiliar",
+      "en": "Cartoon Springboard · Auxiliary",
+      "zh": "Cartoon Springboard · 助理"
+    },
+    "org": "CARTOON",
+    "description": {
+      "es": "Seleccionada para el programa europeo de animación de Cartoon, dando soporte a la producción de los equipos participantes.",
+      "en": "Selected for Cartoon's European animation programme, supporting the production of the participating teams.",
+      "zh": "入选 Cartoon 欧洲动画项目，为参与团队的制作提供支持。"
+    }
+  },
+  {
+    "year": "2025",
+    "type": "event",
+    "title": {
+      "es": "Visual Creator",
+      "en": "Visual Creator",
+      "zh": "视觉创作者"
+    },
+    "org": "MappingMe!",
+    "description": {
+      "es": "Creación de contenido visual y projection mapping para experiencias inmersivas en tiempo real.",
+      "en": "Visual content and projection mapping for real-time immersive experiences.",
+      "zh": "为实时沉浸式体验创作视觉内容与投影映射。"
+    }
+  },
+  {
+    "year": "2025",
+    "type": "event",
+    "title": {
+      "es": "Cartoon Springboard · Coordinadora",
+      "en": "Cartoon Springboard · Coordinator",
+      "zh": "Cartoon Springboard · 协调员"
+    },
+    "org": "CARTOON",
+    "description": {
+      "es": "De vuelta a Cartoon Springboard, ahora coordinando equipos y mentorizando a la nueva hornada de artistas.",
+      "en": "Back at Cartoon Springboard, now coordinating teams and mentoring the new wave of artists.",
+      "zh": "重返 Cartoon Springboard，现负责协调团队并指导新一批艺术家。"
+    }
+  }
+]
