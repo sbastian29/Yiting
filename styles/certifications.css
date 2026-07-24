@@ -91,11 +91,16 @@
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 9px 16px;
+  padding: 12px 18px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 2px;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text-mid);
+  touch-action: manipulation;
   transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
 }
 .cf-pill:hover { border-color: var(--page-accent); color: var(--page-accent); }
@@ -193,8 +198,11 @@
    .is-scrolling class toggled from ScrollTrigger's onEnter/onLeave/
    onEnterBack/onLeaveBack callbacks in certifications.jsx. */
 .certs-tilegrid.is-scrolling { will-change: transform; }
-/* Static layout (non-pinned) keeps the grid in flow, no mask, no scroller. */
-.certs-view:not(:has(.certs-pin-wrap)) .certs-tile-viewport {
+/* Static layout (non-pinned) keeps the grid in flow, no mask, no scroller.
+   Two selectors: `:has()` for modern browsers, plus `.certs-view.is-static`
+   as a JS-applied fallback for iOS <15.4 that doesn't support :has(). */
+.certs-view:not(:has(.certs-pin-wrap)) .certs-tile-viewport,
+.certs-view.is-static .certs-tile-viewport {
   overflow: visible;
   height: auto;
   -webkit-mask-image: none;
@@ -261,7 +269,13 @@
 }
 .cert-tile:hover .cert-tile-panel,
 .cert-tile:focus-visible .cert-tile-panel,
+.cert-tile:active .cert-tile-panel,
 .cert-tile.is-active .cert-tile-panel { border-color: var(--page-accent); }
+/* touch feedback: :active gives the tap a visible response since hover-dim
+   doesn't fire on coarse pointers */
+@media (hover: none) {
+  .cert-tile:active .cert-tile-badge { transform: scale(1.04); }
+}
 
 /* hover-dim: when any tile is hovered, the others fade to background level
    so the active one takes over the stage. Applied via .is-hovering on the
@@ -339,7 +353,7 @@
 .ctc-name {
   font-family: var(--f-head);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13.5px;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -349,7 +363,7 @@
 }
 .ctc-year {
   font-family: var(--f-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   color: var(--text-mid);
 }
@@ -475,8 +489,9 @@
   .cert-mini { flex: 1 1 160px; }
 }
 @media (max-width: 560px) {
-  .certs-filter { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .cf-pill { flex: none; }
+  .certs-filter { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+                  padding-bottom: 4px; scroll-snap-type: x proximity; }
+  .cf-pill { flex: none; scroll-snap-align: start; }
 }
 
 /* =================================================================
@@ -569,9 +584,10 @@
 }
 .certs-nav .nav-bar-menu {
   flex: 0 0 auto; display: grid; place-items: center;
-  width: 34px; height: 34px; margin-right: -6px;
+  min-width: 44px; min-height: 44px; margin-right: -6px;
   color: var(--text); background: transparent; border: none;
-  cursor: pointer; transition: color .25s var(--ease-out);
+  cursor: pointer; touch-action: manipulation;
+  transition: color .25s var(--ease-out);
 }
 .certs-nav .nav-bar-menu:hover { color: var(--page-accent); }
 .certs-nav .nav-bar-menu:focus-visible {
@@ -594,8 +610,11 @@
 .certs-nav .nav-fl-panel {
   position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
   width: min(560px, 90vw); z-index: 299;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px;
-  overflow: hidden; padding-top: 52px; box-sizing: border-box;
+  padding-top: 52px; box-sizing: border-box;
   clip-path: inset(0 0 100% 0);
   box-shadow: 0 22px 60px rgba(0,0,0,0.46);
 }
@@ -638,7 +657,10 @@
 .certs-nav .nav-lang-btn {
   background: none; border: none; cursor: pointer;
   font: 11px var(--f-mono); color: var(--text-dim);
-  padding: 2px 2px; transition: color .2s var(--ease-out);
+  padding: 12px 14px; min-height: 44px; min-width: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  touch-action: manipulation;
+  transition: color .2s var(--ease-out);
 }
 .certs-nav .nav-lang-btn:hover { color: var(--text-mid); }
 .certs-nav .nav-lang-btn:focus-visible {
@@ -649,10 +671,11 @@
 .certs-nav .nav-lang-sep { font: 11px var(--f-mono); color: var(--text-dim); }
 .certs-nav .nav-copy { font: 11px var(--f-mono); color: var(--text-dim); letter-spacing: 0.04em; }
 
-@media (max-width: 760px) {
+@media (max-width: 767.98px) {
   .certs-nav .nav-bar, .certs-nav .nav-fl-panel { width: calc(100% - 32px); border-radius: 10px; }
   .certs-nav .nav-link-index { display: none; }
   .certs-nav .nav-link-name { font-size: 24px; }
+  .certs-nav .nav-fl-overlay { overscroll-behavior: contain; touch-action: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .certs-nav .nav-bar-menu,
@@ -830,8 +853,11 @@
   background: var(--bg);
   transform: translateY(100%);
   overflow: hidden;
-  will-change: transform, opacity;
 }
+/* will-change only during the tween — JS sets .is-active on curtain start
+   and clears it on end/interrupt (see certifications.jsx). Permanent
+   will-change kept the layer promoted forever, wasting VRAM. */
+.certs-curtain.is-active { will-change: transform, opacity; }
 .certs-curtain > span {
   position: absolute;
   inset: 0;
@@ -884,16 +910,18 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 18px;
+  padding: 14px 20px;
+  min-height: 44px;
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text);
   font-family: var(--f-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
+  touch-action: manipulation;
   transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out), background 0.3s var(--ease-out);
 }
 .cert-modal-close:hover { color: var(--card-accent); border-color: var(--card-accent); }

@@ -48,16 +48,23 @@ const hoverCapable = () => {
   catch (e) { return true; }
 };
 
-/* ---- body scroll lock, ref-counted so nested lockers don't clobber
-   each other (modal open while nav is also open, etc.) ---- */
+/* ---- body scroll lock — delegates to the site-wide iOS-safe helper when
+   available (lib.jsx exposes lockBodyScroll/unlockBodyScroll). Falls back
+   to raw overflow toggle for the standalone certifications.html page,
+   which doesn't load lib.jsx. Both paths remain ref-counted. */
 let _lockCount = 0;
 function lockBody() {
-  if (_lockCount === 0) document.body.style.overflow = 'hidden';
-  _lockCount++;
+  if (_lockCount++ === 0) {
+    if (typeof window !== 'undefined' && window.lockBodyScroll) window.lockBodyScroll();
+    else document.body.style.overflow = 'hidden';
+  }
 }
 function unlockBody() {
   _lockCount = Math.max(0, _lockCount - 1);
-  if (_lockCount === 0) document.body.style.overflow = '';
+  if (_lockCount === 0) {
+    if (typeof window !== 'undefined' && window.unlockBodyScroll) window.unlockBodyScroll();
+    else document.body.style.overflow = '';
+  }
 }
 
 /* ---- single global Escape listener + per-layer stack, so stacked
@@ -108,6 +115,8 @@ function useFocusTrap(rootRef, isActive) {
     returnFocusRef.current = document.activeElement;
 
     const raf = requestAnimationFrame(() => {
+      // Prefer the title (data-autofocus on h2.cmc-name) so screen readers
+      // announce the certificate name before "Close".
       const first = root.querySelector('[data-autofocus], .cert-modal-close, button, [href], input, [tabindex]:not([tabindex="-1"])');
       if (first) first.focus();
     });
@@ -405,10 +414,15 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
     // 90/10 mix rendered as two stacked layers via a CSS variable
     el.style.setProperty('--curtain-tint', tint);
     g.killTweensOf(el);
-    const tl = g.timeline();
+    // .is-active promotes the layer via will-change only while the tween runs.
+    // onInterrupt + final .set() guarantee cleanup even if a rapid filter
+    // change or a Safari backgrounding kills the timeline mid-flight.
+    el.classList.add('is-active');
+    const clearActive = () => { el.classList.remove('is-active'); };
+    const tl = g.timeline({ onInterrupt: clearActive, onComplete: clearActive });
     tl.set(el, { yPercent: 100, autoAlpha: 1 })
-      .to(el, { yPercent: 0, duration: 0.28, ease: 'power3.inOut' })
-      .to(el, { yPercent: -100, duration: 0.32, ease: 'power3.inOut' }, '+=0.05')
+      .to(el, { yPercent: 0, duration: 0.22, ease: 'power3.inOut' })
+      .to(el, { yPercent: -100, duration: 0.26, ease: 'power3.inOut' }, '+=0.04')
       .set(el, { autoAlpha: 0, yPercent: 100 });
   }, [filter, setFilter]);
 
@@ -542,8 +556,10 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
   }
 
   // Static (short lists / reduced-motion / no-hover): original in-flow layout.
+  // `is-static` is the explicit JS class that iOS <15.4 (no `:has()`) uses to
+  // drop the viewport clip — see certifications.css .certs-view.is-static.
   return (
-    <div className="certs-view" key="rail">
+    <div className="certs-view is-static" key="rail">
       {curtain}
       {filterPills}
       {railLayout}
@@ -653,6 +669,44 @@ function CertModal({ certs, lang, index, onClose, onNav, filter }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [index, visibleCerts.length, onNav]);
 
+  // Swipe gestures on touch — horizontal for prev/next, vertical (down) for
+  // close. Bound on the modal overlay (not the card body) so the body's own
+  // vertical scroll isn't hijacked when the user scrolls text.
+  useEffect(() => {
+    const o = overlayRef.current;
+    if (!o) return;
+    const SWIPE_MIN = 60;   // px before a gesture registers as a swipe
+    const SWIPE_MAX_OFF = 40; // orthogonal-axis noise tolerance
+    const s = { x: 0, y: 0, active: false, target: null };
+    const onDown = (e) => {
+      if (e.pointerType !== 'touch') return;
+      // ignore swipes that start inside the scrollable body/media (let the
+      // user scroll the description without triggering nav)
+      s.target = e.target;
+      const scroller = e.target.closest && e.target.closest('.cmc-body, .cmc-media');
+      if (scroller && scroller.scrollHeight > scroller.clientHeight + 4) { s.active = false; return; }
+      s.x = e.clientX; s.y = e.clientY; s.active = true;
+    };
+    const onUp = (e) => {
+      if (!s.active || e.pointerType !== 'touch') return;
+      s.active = false;
+      const dx = e.clientX - s.x, dy = e.clientY - s.y;
+      if (Math.abs(dx) > SWIPE_MIN && Math.abs(dy) < SWIPE_MAX_OFF){
+        if (dx < 0) onNav((index + 1) % visibleCerts.length);
+        else onNav((index - 1 + visibleCerts.length) % visibleCerts.length);
+      } else if (dy > SWIPE_MIN && Math.abs(dx) < SWIPE_MAX_OFF){
+        onClose();
+      }
+    };
+    o.addEventListener('pointerdown', onDown, { passive: true });
+    o.addEventListener('pointerup', onUp, { passive: true });
+    o.addEventListener('pointercancel', () => { s.active = false; }, { passive: true });
+    return () => {
+      o.removeEventListener('pointerdown', onDown);
+      o.removeEventListener('pointerup', onUp);
+    };
+  }, [index, visibleCerts.length, onNav, onClose]);
+
   const isTyped = TYPED.has(c.type);
 
   const handleRootClick = (e) => {
@@ -696,7 +750,7 @@ function CertModal({ certs, lang, index, onClose, onNav, filter }) {
             <span className="cmc-year">{tr(c.date, lang) || c.year}</span>
           </div>
 
-          <h2 className="cmc-name">{tr(c.name, lang)}</h2>
+          <h2 className="cmc-name" tabIndex={-1} data-autofocus>{tr(c.name, lang)}</h2>
           <p className="cmc-blurb">{tr(c.blurb, lang)}</p>
 
           <div className="cmc-meta">
@@ -1013,7 +1067,11 @@ function CertsLoader({ certs, onDone }) {
   const mosaicItems = useMemo(() => {
     const src = (certs && certs.length) ? certs : [];
     const withBadge = src.filter(c => c && c.badge);
-    const target = 48;
+    // 48 cells on wide screens (8 cols × 6 rows), 24 on mobile (4 cols × 6
+    // rows) — the audit flagged that half the mosaic never renders under the
+    // vignette on <=760, so drop it to save fill and network per badge.
+    const isNarrow = typeof window !== 'undefined' && window.innerWidth < 768;
+    const target = isNarrow ? 24 : 48;
     const out = [];
     for (let i = 0; i < target; i++) {
       if (withBadge.length) out.push(withBadge[i % withBadge.length]);
@@ -1091,8 +1149,12 @@ function CertificationsPage() {
 
   return (
     <div className="certs-page" data-screen-label="Certifications">
+      <a className="skip-link" href="#certs-main"
+         onClick={(e)=>{ e.preventDefault(); const m = document.getElementById('certs-main'); if (m){ m.setAttribute('tabindex','-1'); m.focus({preventScroll:false}); m.scrollIntoView({block:'start'}); } }}>
+        Saltar al contenido
+      </a>
       <CertsNav lang={lang} setLang={setLang} />
-      <div className="certs-shell">
+      <div id="certs-main" className="certs-shell" tabIndex={-1}>
         <div className={'certs-head certs-fade' + (headIn ? ' in' : '')}>
           <div className="certs-eyebrow">{tr(UI.eyebrow, lang)}</div>
           <h1 className="certs-title">{tr(UI.title, lang)}</h1>
