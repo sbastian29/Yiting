@@ -67,6 +67,52 @@ const TYPE_LABELS = {
 };
 const typeLabel = (t, lang) => tr(TYPE_LABELS[t] || t, lang);
 
+/* Types with persistent color + icon (intentional exception to the
+   hover-only accent rule). All other types render neutral. */
+const TYPED = new Set(['award', 'scholarship']);
+
+/* Hex values mirroring the CSS custom properties on .certs-page — used
+   only for the JS-driven filter curtain, whose background needs a real
+   color value (10% tint of the type over the base bg). */
+const TYPE_COLOR_HEX = {
+  award:         '#fbbf7a',
+  scholarship:   '#c4b5fd',
+  certification: '#7dd3fc',
+  recognition:   '#94a3b8',
+};
+const PAGE_ACCENT_HEX = '#7dd3fc';
+const BG_HEX = '#060608';
+
+/* Inline SVGs — currentColor so they inherit the per-type color set
+   via CSS custom properties on the containing element. 1.5 stroke to
+   match the sitewide icon weight. */
+function TypeIcon({ type, className }) {
+  const cls = className || 'cert-type-ico';
+  if (type === 'award') {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M7 4h10v3a5 5 0 0 1-10 0V4z"/>
+        <path d="M7 5H4v2a3 3 0 0 0 3 3"/>
+        <path d="M17 5h3v2a3 3 0 0 1-3 3"/>
+        <path d="M9 20h6"/>
+        <path d="M12 12v8"/>
+      </svg>
+    );
+  }
+  if (type === 'scholarship') {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M2 9l10-5 10 5-10 5-10-5z"/>
+        <path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>
+        <path d="M22 9v5"/>
+      </svg>
+    );
+  }
+  return null;
+}
+
 const codeFor = (i) => 'Y4/CERT_' + String(i + 1).padStart(2, '0');
 
 /* ---- badge with graceful placeholder on missing/broken image ---- */
@@ -98,48 +144,79 @@ function FlipLabel({ text }) {
   );
 }
 
-/* ================== RAIL (image-tile mosaic) + CENTER PREVIEW (State A) ================== */
-const RAIL_PAGE = 6;   // 2 cols × 3 rows visible at once
+/* ================== RAIL (image-tile mosaic) + CENTER PREVIEW (State A) ==================
+   Scroll model (v3): the entire layout is pinned via sticky. The tile column is a fixed-
+   height viewport; the tile grid inside translates upward as page scroll progresses. No
+   batch pagination — every filtered item is rendered once, tiles just scroll past.
+   ============================================================================ */
 
 function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
-  const [hovered, setHovered] = useState(null);   // rail index currently hovered
+  const [hovered, setHovered] = useState(null);   // index currently hovered
   const [shownIdx, setShownIdx] = useState(null); // last cert shown in preview (persists during fade-out)
-  const [batch, setBatch] = useState(0);          // active page of tiles when pinned
-  const wrapRef = useRef(null);
+  const wrapRef = useRef(null);                   // tall outer that provides scroll distance
+  const viewportRef = useRef(null);               // fixed-height clipping window for tiles
+  const scrollerRef = useRef(null);               // <ul> that translates upward
+  const gridRef = useRef(null);                   // alias of scrollerRef for the reveal tween
 
   const shown = useMemo(
     () => certs.map((c, i) => ({ c, i })).filter(x => !filter || x.c.type === filter),
     [certs, filter]
   );
 
-  const pageCount = Math.max(1, Math.ceil(shown.length / RAIL_PAGE));
-  const canPin = pageCount > 1 && hoverEnabled;   // hoverEnabled already excludes reduced-motion
-  const items = canPin ? shown.slice(batch * RAIL_PAGE, batch * RAIL_PAGE + RAIL_PAGE) : shown;
+  // scroll distance grows with the number of extra rows past the visible 3
+  const rowsShown = Math.ceil(shown.length / 2);
+  const extraRows = Math.max(0, rowsShown - 3);
+  const canPin = extraRows > 0 && hoverEnabled;
+  const trackHeight = (100 + extraRows * 28) + 'vh';
 
-  // outer wrapper tall enough to scroll through every batch — same formula Work uses
-  const perStepVh = 90;
-  const trackHeight = (100 + pageCount * perStepVh) + 'vh';
-
-  // keep the preview content mounted while it fades back out on mouse-leave
   useEffect(() => { if (hovered !== null) setShownIdx(hovered); }, [hovered]);
 
-  // filtering recomputes the batches against the filtered subset — start at page 0
-  useEffect(() => { setBatch(0); }, [filter]);
+  /* Clip-path skew + fade reveal on filter change / mount. Runs against the tiles
+     currently in the DOM — pure in-place re-render, no route change. */
+  React.useLayoutEffect(() => {
+    const g = window.gsap;
+    const grid = gridRef.current;
+    if (!grid) return;
+    const tiles = grid.querySelectorAll('.cert-tile');
+    if (!tiles.length) return;
+    if (!g || prefersReduce()) {
+      tiles.forEach(t => {
+        t.style.clipPath = 'polygon(0% 100%, 100% 100%, 100% 0%, 0% 0%)';
+        t.style.opacity = '1';
+      });
+      return;
+    }
+    g.killTweensOf(tiles);
+    g.fromTo(tiles,
+      { clipPath: 'polygon(0% 100%, 100% 100%, 120% 0%, 0% 0%)', opacity: 0 },
+      {
+        clipPath: 'polygon(0% 100%, 100% 100%, 100% 0%, 0% 0%)',
+        opacity: 1,
+        duration: 0.5,
+        ease: 'power3.out',
+        stagger: 0.04,
+        overwrite: 'auto',
+      }
+    );
+  }, [filter]);
 
-  // pin + page-through-batches via CSS sticky + manual scroll-progress
-  // (the exact mechanism Work's ZigzagReveal / About's timeline use — no ScrollTrigger)
+  /* pin + scroll-driven translate. Maps window scroll progress across the tall
+     wrapper to an upward translate on the tile grid, so items slide past the
+     fixed viewport while pills / preview / counter stay put. */
   useEffect(() => {
     if (!canPin) return;
     const wrap = wrapRef.current;
-    if (!wrap) return;
+    const viewport = viewportRef.current;
+    const scroller = scrollerRef.current;
+    if (!wrap || !viewport || !scroller) return;
     let raf = 0;
     const paint = () => {
       raf = 0;
       const r = wrap.getBoundingClientRect();
       const scrollable = Math.max(1, r.height - window.innerHeight);
       const p = Math.max(0, Math.min(1, -r.top / scrollable));
-      const idx = Math.min(pageCount - 1, Math.floor(p * pageCount));
-      setBatch(prev => (prev === idx ? prev : idx));
+      const overflow = Math.max(0, scroller.scrollHeight - viewport.clientHeight);
+      scroller.style.transform = 'translate3d(0,' + (-overflow * p).toFixed(1) + 'px,0)';
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(paint); };
     paint();
@@ -150,10 +227,37 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [canPin, pageCount, filter]);
+  }, [canPin, shown.length]);
 
   const previewCert = shownIdx !== null ? certs[shownIdx] : null;
   const previewOn = hoverEnabled && hovered !== null;
+  const items = shown;
+
+  /* Filter curtain: rises from below, 90% base + 10% type-color tint. Applies the
+     new filter mid-animation while the screen is covered, then retracts upward.
+     Under prefers-reduced-motion / no GSAP: just swap instantly. */
+  const curtainRef = useRef(null);
+  const changeFilter = useCallback((next) => {
+    if (next === filter) return;
+    const g = window.gsap;
+    const el = curtainRef.current;
+    if (!g || !el || prefersReduce()) { setFilter(next); return; }
+    const tint = next ? (TYPE_COLOR_HEX[next] || PAGE_ACCENT_HEX) : PAGE_ACCENT_HEX;
+    // 90/10 mix rendered as two stacked layers via a CSS variable
+    el.style.setProperty('--curtain-tint', tint);
+    g.killTweensOf(el);
+    g.set(el, { yPercent: 100, autoAlpha: 1 });
+    g.to(el, {
+      yPercent: 0, duration: 0.45, ease: 'power3.inOut',
+      onComplete: () => {
+        setFilter(next);
+        g.to(el, {
+          yPercent: -100, duration: 0.5, ease: 'power3.inOut', delay: 0.08,
+          onComplete: () => g.set(el, { autoAlpha: 0, yPercent: 100 }),
+        });
+      },
+    });
+  }, [filter, setFilter]);
 
   const filterPills = (
     <div className="certs-filter" role="group" aria-label="Filter by type">
@@ -161,7 +265,7 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
         type="button"
         className={'cf-pill' + (filter === null ? ' is-active' : '')}
         aria-pressed={filter === null}
-        onClick={() => setFilter(null)}
+        onClick={() => changeFilter(null)}
       >
         <FlipLabel text={tr(UI.all, lang)} />
       </button>
@@ -169,9 +273,10 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
         <button
           key={t}
           type="button"
+          data-type={TYPED.has(t) ? t : undefined}
           className={'cf-pill' + (filter === t ? ' is-active' : '')}
           aria-pressed={filter === t}
-          onClick={() => setFilter(filter === t ? null : t)}
+          onClick={() => changeFilter(filter === t ? null : t)}
         >
           <FlipLabel text={typeLabel(t, lang)} />
         </button>
@@ -181,34 +286,47 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
 
   const railLayout = (
     <div className="certs-rail-layout">
-      {/* left: image-only mosaic of badge tiles */}
+      {/* left: image-only mosaic of badge tiles, inside a fixed-height viewport
+          that clips the tile grid as it translates upward on scroll. */}
       <div
         className={'certs-tilewrap' + (hoverEnabled ? '' : ' no-hover')}
         onMouseLeave={() => setHovered(null)}
       >
-        <ul className="certs-tilegrid" key={'batch-' + batch}>
-          {items.map(({ c, i }, pos) => {
-            const n = (canPin ? batch * RAIL_PAGE + pos : pos) + 1;
-            return (
-              <li key={i}>
-                <button
-                  type="button"
-                  className={'cert-tile' + (hovered === i ? ' is-active' : '')}
-                  aria-label={tr(c.name, lang)}
-                  onMouseEnter={() => hoverEnabled && setHovered(i)}
-                  onFocus={() => hoverEnabled && setHovered(i)}
-                  onBlur={() => hoverEnabled && setHovered(null)}
-                  onClick={() => onOpen(i)}
-                >
-                  <span className="cert-tile-panel">
-                    <Badge cert={c} wrapClass="cert-tile-badge" note={typeLabel(c.type, lang)} />
-                  </span>
-                  <span className="cert-tile-num">{String(n).padStart(2, '0')}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="certs-tile-viewport" ref={viewportRef}>
+          <ul
+            className={'certs-tilegrid' + (hovered !== null ? ' is-hovering' : '')}
+            ref={(el) => { scrollerRef.current = el; gridRef.current = el; }}
+          >
+            {items.map(({ c, i }, pos) => {
+              const isTyped = TYPED.has(c.type);
+              return (
+                <li key={i}>
+                  <button
+                    type="button"
+                    data-type={isTyped ? c.type : undefined}
+                    className={'cert-tile' + (hovered === i ? ' is-active' : '')}
+                    aria-label={tr(c.name, lang)}
+                    onMouseEnter={() => hoverEnabled && setHovered(i)}
+                    onFocus={() => hoverEnabled && setHovered(i)}
+                    onBlur={() => hoverEnabled && setHovered(null)}
+                    onClick={() => onOpen(i)}
+                  >
+                    <span className="cert-tile-panel">
+                      <Badge cert={c} wrapClass="cert-tile-badge" note={typeLabel(c.type, lang)} />
+                    </span>
+                    <span className="cert-tile-num">{String(pos + 1).padStart(2, '0')}</span>
+                    {isTyped && (
+                      <span className="cert-tile-chip" aria-hidden="true">
+                        <TypeIcon type={c.type} />
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <RailLegend lang={lang} />
       </div>
 
       {/* right: genuinely empty until a tile is hovered */}
@@ -230,14 +348,16 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
   const counter = (
     <div className="certs-counter">
       {tr(UI.counter, lang)} ({String(shown.length).padStart(2, '0')})
-      {canPin && <span className="certs-page-ind"> · {String(batch + 1).padStart(2, '0')}/{String(pageCount).padStart(2, '0')}</span>}
     </div>
   );
+
+  const curtain = <div className="certs-curtain" ref={curtainRef} aria-hidden="true"><span/></div>;
 
   // Pinned: sticky stage that fills the viewport for the whole scroll sequence.
   if (canPin) {
     return (
-      <div className="certs-view" key={'rail-' + (filter || 'all')}>
+      <div className="certs-view" key="rail">
+        {curtain}
         <div className="certs-pin-wrap" ref={wrapRef} style={{ height: trackHeight, position: 'relative' }}>
           <div
             className="certs-pin-sticky"
@@ -252,9 +372,10 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
     );
   }
 
-  // Static (single batch or reduced-motion / no-hover): original in-flow layout.
+  // Static (short lists / reduced-motion / no-hover): original in-flow layout.
   return (
-    <div className="certs-view" key={'rail-' + (filter || 'all')}>
+    <div className="certs-view" key="rail">
+      {curtain}
       {filterPills}
       {railLayout}
       {counter}
@@ -262,102 +383,462 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
   );
 }
 
-/* ==================== INTRO + DETAIL (States B / C) ==================== */
-function Detail({ certs, lang, index, expanded, onSelect, onExpand, onClose }) {
+/* ---- persistent color+icon legend, lives inside the tile column ---- */
+function RailLegend({ lang }) {
+  const legendCopy = { es: 'Leyenda', en: 'Legend', zh: '图例' };
+  return (
+    <div className="certs-legend" role="note" aria-label={tr(legendCopy, lang)}>
+      <span className="certs-legend-label">{tr(legendCopy, lang)}</span>
+      <span className="certs-legend-item" data-type="award">
+        <TypeIcon type="award" className="certs-legend-ico" />
+        <span className="certs-legend-txt">{typeLabel('award', lang)}</span>
+      </span>
+      <span className="certs-legend-item" data-type="scholarship">
+        <TypeIcon type="scholarship" className="certs-legend-ico" />
+        <span className="certs-legend-txt">{typeLabel('scholarship', lang)}</span>
+      </span>
+    </div>
+  );
+}
+
+/* ==================== FULL-SCREEN MODAL (detail view) ==================== */
+/* Lightbox-style overlay: big badge on the left, all metadata on the right.
+   ESC or backdrop click closes; ← / → step between certifications.
+   Renders into document.body via a fixed overlay — no portal needed since
+   nothing above it in the tree constrains its stacking context. */
+function CertModal({ certs, lang, index, onClose, onNav }) {
+  const overlayRef = useRef(null);
+  const cardRef = useRef(null);
   const c = certs[index];
-  const moreRef = useRef(null);
+
+  // enter animation on mount / index change
+  useEffect(() => {
+    const g = window.gsap;
+    const o = overlayRef.current, card = cardRef.current;
+    if (!o || !card) return;
+    if (!g || prefersReduce()) {
+      o.style.opacity = '1';
+      card.style.opacity = '1';
+      card.style.transform = 'none';
+      return;
+    }
+    g.killTweensOf([o, card]);
+    g.fromTo(o, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, ease: 'power2.out' });
+    g.fromTo(card,
+      { autoAlpha: 0, y: 24, scale: 0.98 },
+      { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: 'power3.out' }
+    );
+  }, [index]);
+
+  // body scroll lock while open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  // keyboard: Esc closes, ← / → navigate
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+      else if (e.key === 'ArrowRight') onNav((index + 1) % certs.length);
+      else if (e.key === 'ArrowLeft') onNav((index - 1 + certs.length) % certs.length);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [index, certs.length, onClose, onNav]);
+
+  const isTyped = TYPED.has(c.type);
 
   return (
-    <div className="certs-view" key={'detail-' + index}>
-      <button type="button" className="certs-close" onClick={onClose}>
-        <span className="cc-x" aria-hidden="true">✕</span>
-        {expanded ? tr(UI.backAll, lang) : tr(UI.close, lang)}
+    <div className="cert-modal" ref={overlayRef} role="dialog" aria-modal="true"
+         aria-label={tr(c.name, lang)} data-type={isTyped ? c.type : undefined}>
+      <div className="cert-modal-backdrop" aria-hidden="true"></div>
+
+      <button type="button" className="cert-modal-close" onClick={onClose}
+              aria-label={tr(UI.close, lang)}>
+        <span aria-hidden="true">✕</span>
+        <span className="cmc-label">{tr(UI.close, lang)}</span>
       </button>
 
-      <div className="certs-detail">
-        <div className="certs-detail-main">
-          <div className="certs-bignum">
-            {codeFor(index)}
-            <span className="certs-bigtype" data-type={c.type}>{typeLabel(c.type, lang)}</span>
-          </div>
-          <Badge cert={c} wrapClass="certs-bigbadge" note={typeLabel(c.type, lang)} />
-          <h2 className="certs-detail-name">{tr(c.name, lang)}</h2>
-          <p className="certs-detail-blurb">{tr(c.blurb, lang)}</p>
+      <button type="button" className="cert-modal-nav prev"
+              onClick={() => onNav((index - 1 + certs.length) % certs.length)}
+              aria-label="Previous">‹</button>
+      <button type="button" className="cert-modal-nav next"
+              onClick={() => onNav((index + 1) % certs.length)}
+              aria-label="Next">›</button>
 
-          {/* State C — expands in place */}
-          <div className={'certs-more' + (expanded ? ' open' : '')}>
-            <div className="certs-more-inner" ref={moreRef}>
-              <div className="certs-meta">
-                <div className="certs-meta-item">
-                  <div className="cmi-k">{tr(UI.date, lang)}</div>
-                  <div className="cmi-v">{tr(c.date, lang) || c.year}</div>
-                </div>
-                <div className="certs-meta-item">
-                  <div className="cmi-k">{tr(UI.issuer, lang)}</div>
-                  <div className="cmi-v">{tr(c.issuer, lang)}</div>
-                </div>
-              </div>
-              <p className="certs-desc">{tr(c.description, lang)}</p>
+      <div className="cert-modal-card" ref={cardRef}>
+        <div className="cmc-media">
+          <Badge cert={c} wrapClass="cmc-badge" note={typeLabel(c.type, lang)} />
+          <div className="cmc-code">{codeFor(index)}</div>
+        </div>
+
+        <div className="cmc-body">
+          <div className="cmc-eyebrow">
+            <span className="cmc-typechip" data-type={c.type}>
+              {isTyped && <TypeIcon type={c.type} className="cmc-typechip-ico" />}
+              <span>{typeLabel(c.type, lang)}</span>
+            </span>
+            <span className="cmc-year">{tr(c.date, lang) || c.year}</span>
+          </div>
+
+          <h2 className="cmc-name">{tr(c.name, lang)}</h2>
+          <p className="cmc-blurb">{tr(c.blurb, lang)}</p>
+
+          <div className="cmc-meta">
+            <div className="cmc-meta-item">
+              <div className="cmi-k">{tr(UI.issuer, lang)}</div>
+              <div className="cmi-v">{tr(c.issuer, lang)}</div>
+            </div>
+            <div className="cmc-meta-item">
+              <div className="cmi-k">{tr(UI.date, lang)}</div>
+              <div className="cmi-v">{tr(c.date, lang) || c.year}</div>
             </div>
           </div>
 
-          <div className="certs-actions">
-            {!expanded && (
-              <button type="button" className="certs-btn certs-btn--accent" onClick={onExpand}>
-                {tr(UI.readMore, lang)} <span className="cb-arrow" aria-hidden="true">→</span>
-              </button>
-            )}
-            {expanded && c.link && (
-              <a className="certs-btn certs-btn--accent" href={c.link}
-                 target="_blank" rel="noopener noreferrer">
-                {tr(UI.verify, lang)} <span className="cb-arrow" aria-hidden="true">↗</span>
-              </a>
-            )}
-            <button type="button" className="certs-btn" onClick={onClose}>
-              {tr(UI.backAll, lang)}
-            </button>
+          <p className="cmc-desc">{tr(c.description, lang)}</p>
+
+          {c.link && (
+            <a className="cmc-verify" href={c.link} target="_blank" rel="noopener noreferrer">
+              {tr(UI.verify, lang)} <span className="cb-arrow" aria-hidden="true">↗</span>
+            </a>
+          )}
+
+          <div className="cmc-counter">
+            {String(index + 1).padStart(2, '0')} / {String(certs.length).padStart(2, '0')}
           </div>
         </div>
-
-        {/* dimmed side rail — jump directly to another cert's intro */}
-        <aside className="certs-rail" aria-label={tr(UI.others, lang)}>
-          <div className="certs-rail-label">{tr(UI.others, lang)}</div>
-          {certs.map((oc, i) => (
-            <button
-              key={i}
-              type="button"
-              className={'cert-mini' + (i === index ? ' is-current' : '')}
-              aria-current={i === index ? 'true' : 'false'}
-              onClick={() => onSelect(i)}
-            >
-              <span className="cert-mini-badge"><MiniBadge cert={oc} /></span>
-              <span className="cert-mini-txt">
-                <span className="cm-name">{tr(oc.name, lang)}</span>
-                <span className="cm-year">{tr(oc.date, lang) || oc.year}</span>
-              </span>
-            </button>
-          ))}
-        </aside>
       </div>
     </div>
   );
 }
 
-function MiniBadge({ cert }) {
+/* =================================================================
+   CertsNav — floating pill NavBar for this standalone page.
+   Reuses the sitewide nav classes (styles duplicated into
+   certifications.css so this page stays self-contained). Links to
+   the SPA (index.html#route) trigger a full page load — deliberate,
+   this page lives outside the SPA router.
+   ================================================================= */
+const NAV_LABELS = {
+  home:    { es: 'Inicio',        en: 'Home',           zh: '首页' },
+  about:   { es: 'Sobre mí',      en: 'About',          zh: '关于' },
+  work:    { es: 'Trabajos',      en: 'Work',           zh: '作品' },
+  play:    { es: 'Juego',         en: 'Play',           zh: '实验' },
+  contact: { es: 'Contacto',      en: 'Contact',        zh: '联系' },
+  certs:   { es: 'Certificaciones', en: 'Certifications', zh: '认证' },
+  menu:    { es: 'Menú',          en: 'Menu',           zh: '菜单' },
+  close:   { es: 'Cerrar',        en: 'Close',          zh: '关闭' },
+  center:  { es: '// tú estás en · certificaciones', en: '// you are on · certifications', zh: '// 你在 · 认证' },
+};
+
+/* Two-layer cross-fade of certification badges — visual replacement
+   for the THREE particle canvas that lives in chrome.jsx's nav panel.
+   Uses window.CERTS_DATA badge URLs, filters to items that actually
+   have an image, and rotates every 1.8s while the panel is open. */
+function NavGallery({ open }) {
+  const [idx, setIdx] = useState(0);
+  const [flip, setFlip] = useState(false);
+
+  /* Source pool: certs with either a badge URL that resolves, or a
+     medal glyph fallback. We keep the raw cert so the layer can decide
+     img-vs-glyph per item and swap to glyph on load error. */
+  const items = useMemo(() => {
+    const arr = window.CERTS_DATA || [];
+    return arr.filter(c => c && (c.badge || c.medal));
+  }, []);
+
+  useEffect(() => {
+    if (!open || items.length < 2 || prefersReduce()) return;
+    const iv = setInterval(() => {
+      setIdx(i => (i + 1) % items.length);
+      setFlip(f => !f);
+    }, 1800);
+    return () => clearInterval(iv);
+  }, [open, items.length]);
+
+  if (!items.length) return null;
+  const prev = (idx - 1 + items.length) % items.length;
+  const aItem = flip ? items[prev] : items[idx];
+  const bItem = flip ? items[idx] : items[prev];
+  return (
+    <div className="nav-gallery" aria-hidden="true">
+      <NavGalleryLayer item={aItem} on={!flip} />
+      <NavGalleryLayer item={bItem} on={ flip} />
+    </div>
+  );
+}
+function NavGalleryLayer({ item, on }) {
   const [err, setErr] = useState(false);
-  if (cert.badge && !err) {
-    return <img src={cert.badge} alt="" draggable="false" onError={() => setErr(true)} />;
+  const cls = 'ng-img' + (on ? ' on' : '');
+  if (item && item.badge && !err) {
+    return <img className={cls} src={item.badge} alt="" draggable="false"
+                onError={() => setErr(true)} />;
   }
-  return <span className="cmb-medal">{cert.medal || '★'}</span>;
+  return (
+    <div className={cls + ' ng-fallback'}>
+      <span className="ng-medal">{(item && item.medal) || '★'}</span>
+    </div>
+  );
+}
+
+function CertsNav({ lang, setLang }) {
+  const [open, setOpen] = useState(false);
+  const overlayRef = useRef(null);
+  const panelRef = useRef(null);
+  const firstRun = useRef(true);
+
+  const menuWord  = tr(NAV_LABELS.menu, lang);
+  const closeWord = tr(NAV_LABELS.close, lang);
+  const centerText = open ? tr({ es: '// elige tu destino', en: '// choose destination', zh: '// 选择目的地' }, lang)
+                          : tr(NAV_LABELS.center, lang);
+
+  const items = [
+    { key: 'home',    href: 'index.html#home' },
+    { key: 'about',   href: 'index.html#about' },
+    { key: 'work',    href: 'index.html#work' },
+    { key: 'play',    href: 'index.html#play' },
+    { key: 'contact', href: 'index.html#contact' },
+    { key: 'certs',   href: 'certifications.html', active: true },
+  ];
+
+  // open / close choreography — same clip-path drop as chrome.jsx, minus canvas
+  useEffect(() => {
+    const overlay = overlayRef.current, panel = panelRef.current;
+    if (!overlay || !panel) return;
+    const g = window.gsap;
+    const reduce = prefersReduce();
+    const linkEls = Array.from(panel.querySelectorAll('.nav-item'));
+    const gallery = panel.querySelector('.nav-gallery');
+    const foot = panel.querySelector('.nav-footer-inner');
+
+    if (firstRun.current) {
+      firstRun.current = false;
+      if (g) { g.set(overlay, { autoAlpha: 0 }); g.set(panel, { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 }); }
+      return;
+    }
+
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      if (!g || reduce) {
+        if (g) { g.set(overlay, { autoAlpha: 1 }); g.set(panel, { clipPath: 'inset(0 0 0% 0)' }); g.set(linkEls, { y: 0, autoAlpha: 1 }); if (gallery) g.set(gallery, { autoAlpha: 1 }); if (foot) g.set(foot, { autoAlpha: 1 }); }
+        return;
+      }
+      g.killTweensOf([overlay, panel, ...linkEls, gallery, foot]);
+      g.to(overlay, { autoAlpha: 1, duration: 0.3 });
+      g.fromTo(panel, { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 }, { clipPath: 'inset(0 0 0% 0)', duration: 0.45, ease: 'power3.out' });
+      g.fromTo(linkEls, { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, stagger: 0.06, duration: 0.35, ease: 'power2.out', delay: 0.2 });
+      if (gallery) g.fromTo(gallery, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, delay: 0.5 });
+      if (foot)    g.fromTo(foot,    { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, delay: 0.65 });
+    } else {
+      document.body.style.overflow = '';
+      if (!g || reduce) {
+        if (g) { g.set(overlay, { autoAlpha: 0 }); g.set(panel, { clipPath: 'inset(0 0 100% 0)' }); }
+        return;
+      }
+      g.killTweensOf([overlay, panel, ...linkEls, gallery, foot]);
+      g.to([...linkEls, gallery, foot].filter(Boolean), { autoAlpha: 0, y: -8, stagger: 0.03, duration: 0.2 });
+      g.to(panel, { clipPath: 'inset(0 0 100% 0)', duration: 0.35, ease: 'power3.in', delay: 0.15 });
+      g.to(overlay, { autoAlpha: 0, duration: 0.3, delay: 0.2 });
+    }
+  }, [open]);
+
+  // hamburger → X morph, same as chrome.jsx
+  useEffect(() => {
+    const g = window.gsap;
+    if (!g) return;
+    const reduce = prefersReduce();
+    if (reduce) {
+      g.set('.certs-nav .bar-1', { y: open ? 7 : 0, rotation: open ? 45 : 0 });
+      g.set('.certs-nav .bar-2', { autoAlpha: open ? 0 : 1 });
+      g.set('.certs-nav .bar-3', { y: open ? -7 : 0, rotation: open ? -45 : 0 });
+      return;
+    }
+    if (open) {
+      g.to('.certs-nav .bar-1', { y: 7,  rotation: 45,  transformOrigin: 'center', duration: 0.35, ease: 'power3.inOut' });
+      g.to('.certs-nav .bar-2', { autoAlpha: 0, duration: 0.2 });
+      g.to('.certs-nav .bar-3', { y: -7, rotation: -45, transformOrigin: 'center', duration: 0.35, ease: 'power3.inOut' });
+    } else {
+      g.to('.certs-nav .bar-1', { y: 0, rotation: 0, duration: 0.35, ease: 'power3.inOut' });
+      g.to('.certs-nav .bar-2', { autoAlpha: 1, duration: 0.3, delay: 0.1 });
+      g.to('.certs-nav .bar-3', { y: 0, rotation: 0, duration: 0.35, ease: 'power3.inOut' });
+    }
+  }, [open]);
+
+  // close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  const hoverIn = (e) => {
+    if (prefersReduce()) return;
+    const g = window.gsap; if (!g) return;
+    const nm = e.currentTarget.querySelector('.nav-link-name');
+    if (nm) g.to(nm, { x: 6, duration: 0.25, ease: 'power2.out' });
+  };
+  const hoverOut = (e) => {
+    const g = window.gsap; if (!g) return;
+    const nm = e.currentTarget.querySelector('.nav-link-name');
+    if (nm) g.to(nm, { x: 0, duration: 0.25, ease: 'power2.out' });
+  };
+
+  const toggleMenu = () => setOpen(o => !o);
+
+  return (
+    <div className="certs-nav">
+      <div className={'nav-fl-overlay' + (open ? ' open' : '')} ref={overlayRef}
+           onClick={() => setOpen(false)} aria-hidden="true"></div>
+
+      <div className="nav-fl-panel" ref={panelRef} aria-hidden={!open}>
+        <nav className="nav-fl-links">
+          {items.map((it, i) => (
+            <a key={it.key} href={it.href}
+               className={'nav-item' + (it.active ? ' active' : '')}
+               onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
+              <span className="nav-link-index">{String(i + 1).padStart(2, '0')}</span>
+              <span className="nav-link-name">{tr(NAV_LABELS[it.key], lang)}</span>
+              <span className="nav-chevron" aria-hidden="true">›</span>
+            </a>
+          ))}
+        </nav>
+
+        <NavGallery open={open} />
+
+        <div className="nav-footer-inner">
+          <div className="nav-lang">
+            <button className={'nav-lang-btn' + (lang === 'es' ? ' active' : '')} onClick={() => setLang('es')}>ES</button>
+            <span className="nav-lang-sep">·</span>
+            <button className={'nav-lang-btn' + (lang === 'en' ? ' active' : '')} onClick={() => setLang('en')}>EN</button>
+            <span className="nav-lang-sep">·</span>
+            <button className={'nav-lang-btn' + (lang === 'zh' ? ' active' : '')} onClick={() => setLang('zh')}>中文</button>
+          </div>
+          <div className="nav-copy">© Lisa 2025</div>
+        </div>
+      </div>
+
+      <header className={'nav-bar' + (open ? ' open' : '')} onClick={toggleMenu}>
+        <a className="nav-bar-logo logo-mark" href="index.html" onClick={(e) => e.stopPropagation()}>
+          <span className="lm-box">YT</span>
+          <span>LISA</span>
+        </a>
+        <div className="nav-bar-center" aria-hidden="true">{centerText}</div>
+        <button className={'nav-bar-menu' + (open ? ' is-open' : '')}
+                aria-expanded={open} aria-label={open ? closeWord : menuWord}
+                onClick={(e) => { e.stopPropagation(); toggleMenu(); }}>
+          <span className="nbm-icon">
+            <svg className="menu-icon" width="24" height="16" viewBox="0 0 24 16" fill="none" aria-hidden="true">
+              <rect className="bar bar-1" x="0" y="0"  width="24" height="2" fill="currentColor" rx="1"/>
+              <rect className="bar bar-2" x="0" y="7"  width="24" height="2" fill="currentColor" rx="1"/>
+              <rect className="bar bar-3" x="0" y="14" width="24" height="2" fill="currentColor" rx="1"/>
+            </svg>
+          </span>
+        </button>
+      </header>
+    </div>
+  );
+}
+
+/* Mosaic cell with graceful fallback — the JSON references badge
+   files that may not exist on disk; render a medal glyph instead of
+   a broken-image icon when the fetch fails. */
+function MosaicCell({ cert }) {
+  const [err, setErr] = useState(false);
+  const showImg = cert && cert.badge && !err;
+  return (
+    <div className="clm-cell">
+      {showImg
+        ? <img src={cert.badge} alt="" draggable="false" onError={() => setErr(true)} />
+        : <span className="clm-medal">{(cert && cert.medal) || '★'}</span>}
+    </div>
+  );
+}
+
+/* =================================================================
+   CertsLoader — standalone initial loader.
+   Counter 0→100 over ~2.2s, mosaic of badge images faded low behind
+   it, vignette for focus. Fades out on completion, then unmounts;
+   the underlying page then mounts fresh so its own reveal (nav +
+   header + tile clip-path stagger) fires visibly.
+   ================================================================= */
+function CertsLoader({ certs, onDone }) {
+  const [n, setN] = useState(0);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    const g = window.gsap;
+    const reduce = prefersReduce();
+    if (!g || reduce) {
+      setN(100);
+      const id = requestAnimationFrame(() => {
+        document.body.style.overflow = '';
+        if (onDone) onDone();
+      });
+      return () => { cancelAnimationFrame(id); document.body.style.overflow = ''; };
+    }
+    const counter = { v: 0 };
+    const tw = g.to(counter, {
+      v: 100,
+      duration: 2.2,
+      ease: 'power2.inOut',
+      onUpdate: () => setN(Math.round(counter.v)),
+      onComplete: () => {
+        g.to(rootRef.current, {
+          autoAlpha: 0,
+          duration: 0.6,
+          delay: 0.25,
+          ease: 'power2.out',
+          onComplete: () => {
+            document.body.style.overflow = '';
+            if (onDone) onDone();
+          },
+        });
+      },
+    });
+    return () => { tw.kill(); document.body.style.overflow = ''; };
+  }, []);
+
+  // Mosaic tiles: fill ~48 slots by cycling the badges that exist,
+  // graceful placeholder for entries without a badge URL.
+  const mosaicItems = useMemo(() => {
+    const src = (certs && certs.length) ? certs : [];
+    const withBadge = src.filter(c => c && c.badge);
+    const target = 48;
+    const out = [];
+    for (let i = 0; i < target; i++) {
+      if (withBadge.length) out.push(withBadge[i % withBadge.length]);
+      else out.push(src[i % Math.max(1, src.length)] || null);
+    }
+    return out;
+  }, [certs]);
+
+  return (
+    <div className="certs-loader" ref={rootRef} role="status" aria-label="Loading">
+      <div className="certs-loader-mosaic" aria-hidden="true">
+        {mosaicItems.map((c, i) => (
+          <MosaicCell key={i} cert={c} />
+        ))}
+      </div>
+      <div className="certs-loader-vignette" aria-hidden="true"></div>
+      <div className="certs-loader-center">
+        <div className="certs-loader-label">Y4 / CERT · INDEX</div>
+        <div className="certs-loader-num">{String(n).padStart(3, '0')}<span className="cln-pct">%</span></div>
+        <div className="certs-loader-bar"><span style={{ width: n + '%' }} /></div>
+      </div>
+    </div>
+  );
 }
 
 /* ============================== PAGE ================================== */
 function CertificationsPage() {
   const certs = (window.CERTS_DATA && window.CERTS_DATA.length) ? window.CERTS_DATA : [];
+  const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState('es');
-  const [view, setView] = useState('grid');   // 'grid' | 'detail'
-  const [index, setIndex] = useState(0);
-  const [expanded, setExpanded] = useState(false);
+  const [modalIdx, setModalIdx] = useState(null);   // null → grid only; number → modal open
   const [filter, setFilter] = useState(null);
   const [headIn, setHeadIn] = useState(prefersReduce());
   const [hoverEnabled] = useState(() => hoverCapable() && !prefersReduce());
@@ -368,52 +849,28 @@ function CertificationsPage() {
     return seen;
   }, [certs]);
 
-  // reveal header on mount (skipped under reduced motion — already shown)
   useEffect(() => {
     if (prefersReduce()) { setHeadIn(true); return; }
     const id = requestAnimationFrame(() => setHeadIn(true));
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const openIntro = useCallback((i) => { setIndex(i); setExpanded(false); setView('detail'); }, []);
-  const selectOther = useCallback((i) => { setIndex(i); setExpanded(false); }, []);
-  const backToGrid = useCallback(() => { setView('grid'); setExpanded(false); }, []);
+  const openCert = useCallback((i) => setModalIdx(i), []);
+  const closeCert = useCallback(() => setModalIdx(null), []);
+  const navCert = useCallback((i) => setModalIdx(i), []);
 
-  // Escape → step back (detail → grid; expanded → intro)
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key !== 'Escape') return;
-      if (view === 'detail') { if (expanded) setExpanded(false); else backToGrid(); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [view, expanded, backToGrid]);
+  if (loading) {
+    return (
+      <div className="certs-page is-loading" data-screen-label="Certifications">
+        <CertsLoader certs={certs} onDone={() => setLoading(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="certs-page" data-screen-label="Certifications">
+      <CertsNav lang={lang} setLang={setLang} />
       <div className="certs-shell">
-        <header className="certs-topbar">
-          <a className="certs-home" href="index.html">
-            <span className="lm-box">YT</span>
-            <span>LISA</span>
-          </a>
-          <nav className="certs-lang" aria-label="Language">
-            {['es', 'en', 'zh'].map((code, i) => (
-              <React.Fragment key={code}>
-                {i > 0 && <span className="nav-lang-sep" style={{ margin: '0 8px', color: 'var(--text-mid)' }}>·</span>}
-                <button
-                  type="button"
-                  onClick={() => setLang(code)}
-                  className="certs-back"
-                  style={{ color: lang === code ? 'var(--page-accent)' : undefined }}
-                >
-                  {code === 'zh' ? '中文' : code.toUpperCase()}
-                </button>
-              </React.Fragment>
-            ))}
-          </nav>
-        </header>
-
         <div className={'certs-head certs-fade' + (headIn ? ' in' : '')}>
           <div className="certs-eyebrow">{tr(UI.eyebrow, lang)}</div>
           <h1 className="certs-title">{tr(UI.title, lang)}</h1>
@@ -424,28 +881,28 @@ function CertificationsPage() {
           <p className="certs-sub" style={{ color: 'var(--text-mid)' }}>
             No certification data available.
           </p>
-        ) : view === 'grid' ? (
+        ) : (
           <Grid
             certs={certs}
             lang={lang}
-            onOpen={openIntro}
+            onOpen={openCert}
             filter={filter}
             setFilter={setFilter}
             types={types}
             hoverEnabled={hoverEnabled}
           />
-        ) : (
-          <Detail
-            certs={certs}
-            lang={lang}
-            index={index}
-            expanded={expanded}
-            onSelect={selectOther}
-            onExpand={() => setExpanded(true)}
-            onClose={backToGrid}
-          />
         )}
       </div>
+
+      {modalIdx !== null && certs.length > 0 && (
+        <CertModal
+          certs={certs}
+          lang={lang}
+          index={modalIdx}
+          onClose={closeCert}
+          onNav={navCert}
+        />
+      )}
     </div>
   );
 }
