@@ -10,8 +10,17 @@
 
 // One-line photo swap. Same image for both slots (this is one continuous
 // portrait plane, not two different pictures) — seeded picsum so every
-// load returns the same file.
-const PORTRAIT_SRC = 'https://picsum.photos/seed/lisa-portrait/1000/1300';
+// load returns the same file. Sized to the actual on-screen slot: mobile
+// slots are ~130×168, desktop up to 340×440. Anything bigger is wasted
+// bandwidth on 4G. High-DPR gets a 2x variant.
+const PORTRAIT_SRC = (() => {
+  if (typeof window === 'undefined') return 'https://picsum.photos/seed/lisa-portrait/1000/1300';
+  const isTouch = (window.isTouchDevice ? window.isTouchDevice() : false) || window.innerWidth < 768;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = isTouch ? Math.round(280 * dpr) : Math.round(700 * dpr);
+  const h = Math.round(w * 1.3);
+  return `https://picsum.photos/seed/lisa-portrait/${w}/${h}`;
+})();
 
 /* -------------------------------------------------------------------
    Slot registry — module-level, shared across component instances.
@@ -133,7 +142,10 @@ function ImageFlowLayer(){
       console.error('[imageflow] WebGL context creation failed:', e);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
+    // Touch devices get a tighter DPR cap — the plane is small and the
+    // curl+fbm displacement shader is fillrate-bound on mid-tier mobile GPUs.
+    const isTouch = window.isTouchDevice ? window.isTouchDevice() : false;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, isTouch ? 1.25 : 1.75));
 
     /* ----- Ortho camera aligned to DOM coordinates (origin top-left, y-down)
        so that plane pixel size == CSS pixel size, no math per frame. ----- */
@@ -238,22 +250,39 @@ function ImageFlowLayer(){
       }
     }
 
-    /* ----- resize ----- */
+    /* ----- resize — use visualViewport so iOS address-bar collapse doesn't
+       trigger a reflow storm every scroll frame. ----- */
+    const vv = window.visualViewport;
     const onResize = () => {
-      W = window.innerWidth; H = window.innerHeight;
+      W = window.innerWidth;
+      H = (vv && vv.height) || window.innerHeight;
       camera.right = W; camera.bottom = H;
       camera.updateProjectionMatrix();
       renderer.setSize(W, H, false);
       mat.uniforms.uRes.value.set(W, H);
     };
     window.addEventListener('resize', onResize);
+    if (vv) vv.addEventListener('resize', onResize);
 
     /* ----- render loop ----- */
-    let raf;
+    let raf = 0;
     let lastFrameTime = performance.now();
+    let hiddenSince = 0; // ms opacity has been ~0 while no tween is running
     const tween = { g: null, p: null, active: false };
 
     const render = (now) => {
+      // Pause rAF when the tab is hidden — invisible work drains battery.
+      if (document.hidden) { raf = 0; return; }
+
+      // Auto-park: after 1 s of ~0 opacity with no tween, stop the loop.
+      // A pending tween or a route change will restart it below.
+      if (!tween.active && mat.uniforms.uOpacity.value < 0.02) {
+        if (!hiddenSince) hiddenSince = now;
+        else if (now - hiddenSince > 1000) { raf = 0; return; }
+      } else {
+        hiddenSince = 0;
+      }
+
       raf = requestAnimationFrame(render);
       const dt = Math.max(1, now - lastFrameTime);
       lastFrameTime = now;
@@ -284,7 +313,15 @@ function ImageFlowLayer(){
 
       renderer.render(scene, camera);
     };
-    raf = requestAnimationFrame(render);
+    // Kick a render (used to resume after auto-park / tab hidden / route change).
+    const ensureRender = () => {
+      hiddenSince = 0;
+      lastFrameTime = performance.now();
+      if (!raf && !document.hidden) raf = requestAnimationFrame(render);
+    };
+    ensureRender();
+    const onVisibility = () => { if (!document.hidden) ensureRender(); };
+    document.addEventListener('visibilitychange', onVisibility);
 
     /* ----- route-change handler ----- */
     const T = (window.TRANSITION_MS && window.TRANSITION_MS.fabric) || { in: 700, out: 700 };
@@ -303,6 +340,7 @@ function ImageFlowLayer(){
         const hasSlot = !!newEl && !!toRect;
 
         console.log('[imageflow] route', from, '→', to, '· from:', fromRect, '· to:', toRect, '· hasSlot:', hasSlot);
+        ensureRender(); // wake the render loop if it was parked
 
         // kill any in-flight tweens so rapid clicks don't stack
         if (tween.g){ tween.g.kill(); tween.g = null; }
@@ -356,8 +394,10 @@ function ImageFlowLayer(){
     console.log('[imageflow] mounted; canvas:', canvas.width + 'x' + canvas.height, '· slots:', Array.from(_slots.keys()));
 
     return () => {
-      cancelAnimationFrame(raf);
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
+      if (vv) vv.removeEventListener('resize', onResize);
+      document.removeEventListener('visibilitychange', onVisibility);
       _routeListeners.delete(onRouteChange);
       try { if (tween.g) tween.g.kill(); if (tween.p) tween.p.kill(); } catch(e){}
       try {

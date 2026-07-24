@@ -660,25 +660,29 @@ function OrbitalInfoPanel({ project, idx, onClose }){
 /* ------------------------------------------------------------------ */
 function OrbitalListMobile({ projects, onOpen }){
   const { lang } = useLang();
+  const total = String(projects.length).padStart(2,'0');
   return (
     <div className="orbital-mobile-list" style={{
       display:'flex', flexDirection:'column', gap:10,
-      padding:'6px 4px 28px', overflowY:'auto', height:'100%',
-      WebkitOverflowScrolling:'touch'
+      padding:'6px 4px 28px', width:'100%',
     }}>
+      <div className="mono-tag" style={{padding:'4px 4px 10px', color:'var(--text-mid)', letterSpacing:'0.18em', fontSize:11}}>
+        {lang==='es'?'01':'01'}–{total} · {total} {lang==='es'?'PROYECTOS':lang==='zh'?'项目':'PROJECTS'}
+      </div>
       {projects.map((p, i) => (
         <button key={p.id} data-cursor="hover" onClick={()=>onOpen(p, i)} style={{
           display:'flex', alignItems:'center', gap:14, minHeight:64,
-          padding:'12px 16px', textAlign:'left', width:'100%',
+          padding:'14px 16px', textAlign:'left', width:'100%',
           background:'var(--surface,#13131a)', border:'1px solid var(--border,#1f1f2e)',
-          borderRadius:2, color:'var(--fg,#e8e6f0)', cursor:'pointer'
+          borderRadius:2, color:'var(--text,#e8e6f0)', cursor:'pointer',
+          touchAction:'manipulation',
         }}>
-          <span style={{fontFamily:'var(--f-mono,monospace)', fontSize:13, color:'#fbbf7a', minWidth:34}}>{String(i+1).padStart(2,'0')}</span>
-          <span style={{display:'flex', flexDirection:'column', gap:3, flex:1, minWidth:0}}>
-            <span style={{fontFamily:'var(--f-display,"Syne",sans-serif)', fontWeight:700, fontSize:18, lineHeight:1.1}}>{p.title}</span>
-            <span style={{fontFamily:'var(--f-mono,monospace)', fontSize:11, color:'#5c5a6e', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{tr(p.role,lang) || p.tools || ''}</span>
+          <span style={{fontFamily:'var(--f-mono,monospace)', fontSize:14, color:'#fbbf7a', minWidth:34}}>{String(i+1).padStart(2,'0')}</span>
+          <span style={{display:'flex', flexDirection:'column', gap:4, flex:1, minWidth:0}}>
+            <span style={{fontFamily:'var(--f-head,"Syne",sans-serif)', fontWeight:700, fontSize:19, lineHeight:1.15, letterSpacing:'-0.01em'}}>{p.title}</span>
+            <span style={{fontFamily:'var(--f-mono,monospace)', fontSize:12, color:'var(--text-mid,#5c5a6e)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{tr(p.role,lang) || p.tools || ''}</span>
           </span>
-          <span style={{fontFamily:'var(--f-mono,monospace)', fontSize:11, color:'#5c5a6e'}}>{p.year || ''}</span>
+          <span style={{fontFamily:'var(--f-mono,monospace)', fontSize:12, color:'var(--text-mid,#5c5a6e)'}}>{p.year || ''}</span>
         </button>
       ))}
     </div>
@@ -848,12 +852,13 @@ function ToolPills({ tools, selected, onSelect }){
 
 function chipStyle(active){
   return {
-    fontFamily:'var(--f-mono)', fontSize:11, letterSpacing:'0.1em', textTransform:'uppercase',
-    padding:'8px 15px', borderRadius:2, cursor:'pointer',
+    fontFamily:'var(--f-mono)', fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase',
+    padding:'12px 18px', minHeight:44, borderRadius:2, cursor:'pointer',
     background: active ? 'rgba(251,191,122,0.14)' : 'var(--surface)',
     border: '1px solid ' + (active ? WORK_ACCENT : 'var(--border)'),
     color: active ? WORK_ACCENT : 'var(--text)',
     transition:'color .3s, border-color .3s, background .3s',
+    display:'inline-flex', alignItems:'center', justifyContent:'center',
   };
 }
 
