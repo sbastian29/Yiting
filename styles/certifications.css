@@ -321,6 +321,39 @@
 .cert-tile-chip svg { width: 12px; height: 12px; }
 .cert-type-ico { display: block; }
 
+/* mobile always-visible caption (no-hover devices): sits at the bottom
+   of the tile over a gradient scrim so it reads over the badge art. */
+.cert-tile-caption {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 12px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  color: var(--text);
+  background: linear-gradient(180deg, transparent, rgba(6,6,8,0.75) 55%, rgba(6,6,8,0.9));
+  pointer-events: none;
+  z-index: 2;
+}
+.ctc-name {
+  font-family: var(--f-head);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ctc-year {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--text-mid);
+}
+
 /* right — genuinely empty until hover; no container, border, or box */
 .certs-preview-area {
   display: flex;
@@ -385,11 +418,15 @@
   place-items: center;
   position: relative;
 }
-.cert-badge-ph .cbp-medal {
-  font-size: clamp(56px, 9vw, 118px);
-  line-height: 1;
-  filter: drop-shadow(0 6px 13px rgba(125,211,252,0.35)) saturate(1.05);
+.cert-badge-ph .cbp-icon {
+  width: 62%;
+  height: 62%;
+  color: var(--card-accent, var(--page-accent));
 }
+.cert-badge-ph[data-type="award"]         { --card-accent: var(--type-award); }
+.cert-badge-ph[data-type="scholarship"]   { --card-accent: var(--type-scholarship); }
+.cert-badge-ph[data-type="certification"] { --card-accent: #7dd3fc; }
+.cert-badge-ph[data-type="recognition"]   { --card-accent: #94a3b8; }
 .cert-badge-ph .cbp-note {
   position: absolute;
   bottom: -2%;
@@ -933,7 +970,7 @@
   z-index: -1;
 }
 .cmc-badge .cert-badge-img { width: 88%; height: 88%; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.4)); }
-.cmc-badge .cert-badge-ph .cbp-medal { font-size: clamp(140px, 18vw, 260px); }
+.cmc-badge .cert-badge-ph .cbp-icon { width: 70%; height: 70%; }
 .cmc-badge .cert-badge-ph .cbp-note { display: none; }
 .cmc-code {
   position: absolute;

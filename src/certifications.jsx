@@ -1,25 +1,34 @@
 /* ===================================================================
-   certifications.jsx — standalone Certifications page (v2 rebuild).
-   Self-contained: no SPA router, no lib.jsx / scroll.jsx dependency.
+   certifications.jsx — Standalone Certifications page.
+   Self-contained: no SPA router, no external lib.jsx dependency.
 
-   Grid mechanic (adapted from a project-grid interaction):
-     • Full-bleed glass panels, badge centered, name+code hidden by
-       default (opacity 0 / translateY) and revealed on hover of that
-       tile only.
-     • Hovering one tile dims + grayscales ALL siblings simultaneously
-       (JS-driven active/dimmed state across tiles, not CSS :hover).
-     • Category pills (TODOS + one per `type`) filter the grid.
+   Grid layout (ScrollTrigger-driven sticky stage):
+     • Fixed-height viewport (CSS sticky) clips a tile grid. ScrollTrigger
+       translates the grid upward on page scroll, so tiles slide past
+       while filter pills/preview panel/counter stay pinned.
+     • Filter pills (TODOS + one per `type`). Clicking triggers a
+       decorative overlay wipe (90% base bg + 10% type tint) while
+       filter applies synchronously.
 
-   Click flow:
-     A · Grid   → click a tile
-     B · Intro  — big badge + name + code + blurb + dimmed side rail
-     C · Detail — expands in place: date, issuer, description, verify
-   Transitions between states use a clip-path polygon wipe.
+   Interactions:
+     • Hover (desktop, capable device): dims all other tiles to 0.18;
+       right column shows badge + name + blurb preview. Under touch or
+       no-hover media query: tiles show name+year caption directly.
+     • Click tile: opens full-viewport modal (badge left, metadata
+       right). ESC or backdrop closes. ←/→ arrows + buttons navigate
+       within the filtered subset. Focus trap active; siblings inert.
 
-   prefers-reduced-motion / no-hover (mobile): drop the hover hide +
-   grayscale + wipe — info is always visible, states just crossfade.
+   Features:
+     • Body scroll lock, ref-counted so nested overlays (modal + nav)
+       don't interfere.
+     • Reactive matchMedia: hover capability + reduced-motion
+       re-evaluate on OS toggle.
+     • Loader: 600ms progress counter, skipped on sessionStorage flag
+       (repeat visits in same session).
+     • Fallback badges: per-type SVG icon (award/scholarship/
+       certification/recognition) in type color when image missing.
+     • Data: loaded once from data/certifications.json → window.CERTS_DATA.
 
-   Data: window.CERTS_DATA (loaded before mount).
    =================================================================== */
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
@@ -213,6 +222,24 @@ function TypeIcon({ type, className }) {
       </svg>
     );
   }
+  if (type === 'certification') {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="14" rx="2"/>
+        <path d="M7 9h10M7 13h6"/>
+        <path d="M15 20l2-2 2 2v-4"/>
+      </svg>
+    );
+  }
+  if (type === 'recognition') {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 2l2.5 6 6.5.5-5 4.5 1.5 6.5L12 16l-5.5 3.5L8 13l-5-4.5 6.5-.5z"/>
+      </svg>
+    );
+  }
   return null;
 }
 
@@ -228,8 +255,8 @@ function Badge({ cert, wrapClass, note }) {
         ? <img className="cert-badge-img" src={cert.badge} alt=""
                draggable="false" onError={() => setErr(true)} />
         : (
-          <div className="cert-badge-ph">
-            <span className="cbp-medal">{cert.medal || '★'}</span>
+          <div className="cert-badge-ph" data-type={cert.type}>
+            <TypeIcon type={cert.type} className="cbp-icon" />
             {note && <span className="cbp-note">{note}</span>}
           </div>
         )}
@@ -415,7 +442,7 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
       {/* left: image-only mosaic of badge tiles, inside a fixed-height viewport
           that clips the tile grid as it translates upward on scroll. */}
       <div
-        className={'certs-tilewrap' + (hoverEnabled ? '' : ' no-hover')}
+        className="certs-tilewrap"
         onMouseLeave={() => setHovered(null)}
       >
         <div className="certs-tile-viewport" ref={viewportRef}>
@@ -454,6 +481,12 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
                     {isTyped && (
                       <span className="cert-tile-chip" aria-hidden="true">
                         <TypeIcon type={c.type} />
+                      </span>
+                    )}
+                    {!hoverEnabled && (
+                      <span className="cert-tile-caption">
+                        <span className="ctc-name">{tr(c.name, lang)}</span>
+                        <span className="ctc-year">{tr(c.date, lang) || c.year}</span>
                       </span>
                     )}
                   </button>
