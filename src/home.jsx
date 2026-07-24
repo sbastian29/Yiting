@@ -164,7 +164,7 @@ function Home({ navigate }){
       </section>
 
       {/* PINNED JOURNEY */}
-      <section className="home-journey" ref={journeyRef} style={{height:'460vh'}} data-screen-label="Home / Journey">
+      <section className="home-journey" ref={journeyRef} style={{height:'460svh'}} data-screen-label="Home / Journey">
         <div className="home-stage">
           <div className="stage-inner">
 

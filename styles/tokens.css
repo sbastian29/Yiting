@@ -33,4 +33,35 @@
 
   /* scroll velocity store */
   --scroll-vel: 0;
+
+  /* ---- Fluid type scale (clamp: min mobile · fluid · max desktop) ---- */
+  /* Reference: 375px → 1440px. Never below 12px, never above showpiece scale. */
+  --fs-micro:   clamp(11.5px, 0.5vw + 10px, 12.5px); /* labels mono uppercase */
+  --fs-caption: clamp(12px,   0.6vw + 10.5px, 14px); /* captions */
+  --fs-body:    clamp(14px,   0.5vw + 12px,   16px); /* body text */
+  --fs-lead:    clamp(15px,   0.9vw + 12px,   19px); /* subheads */
+  --fs-h4:      clamp(20px,   1.6vw + 14px,   28px);
+  --fs-h3:      clamp(24px,   2vw + 16px,     36px);
+  --fs-h2:      clamp(30px,   3.4vw + 16px,   58px);
+  --fs-h1:      clamp(38px,   5.4vw + 16px,   96px);
+  --fs-mega:    clamp(52px,   10vw + 16px,   180px);
+
+  /* ---- Fluid space scale (goes into paddings, gaps, margins) ---- */
+  --sp-1:  clamp(4px,   0.4vw + 2px,   6px);
+  --sp-2:  clamp(8px,   0.6vw + 4px,  12px);
+  --sp-3:  clamp(12px,  1vw + 6px,    20px);
+  --sp-4:  clamp(16px,  1.4vw + 8px,  28px);
+  --sp-5:  clamp(20px,  2vw + 10px,   40px);
+  --sp-6:  clamp(28px,  3vw + 14px,   60px);
+  --sp-7:  clamp(40px,  4vw + 18px,   88px);
+  --sp-8:  clamp(56px,  6vw + 22px,  128px);
+
+  /* ---- Safe area insets (iOS notch / gesture bar) ---- */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+
+  /* ---- Touch target minimum ---- */
+  --touch-min: 44px;
 }

@@ -26,7 +26,7 @@
 .home-connectors { position:fixed; inset:0; z-index:1; pointer-events:none; }
 .home-connectors line { stroke:var(--page-accent); stroke-width:1; opacity:0.5; }
 
-.home-hero { position:relative; z-index:2; min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+.home-hero { position:relative; z-index:2; min-height:100dvh; display:flex; flex-direction:column; justify-content:center;
   padding:0 clamp(20px,6vw,110px); }
 .home-hero .eyebrow { margin-bottom:22px; }
 .hero-name { font-family:var(--f-head); font-weight:800; line-height:0.92; letter-spacing:-0.02em;
@@ -48,7 +48,7 @@
 
 /* journey (pinned) */
 .home-journey { position:relative; z-index:2; }
-.home-stage { position:sticky; top:0; height:100vh; display:grid; place-items:center; overflow:hidden; }
+.home-stage { position:sticky; top:0; height:100dvh; display:grid; place-items:center; overflow:hidden; }
 .stage-inner { position:relative; width:100%; max-width:1200px; padding:0 clamp(20px,6vw,80px); }
 
 /* act 1 — tagline */
@@ -97,7 +97,7 @@
 .work-head h1 { font-family:var(--f-head); font-weight:800; font-size:clamp(40px,7vw,92px); line-height:0.95; margin:18px 0 18px; }
 .work-head p { color:var(--text-mid); font-size:clamp(15px,1.6vw,18px); max-width:540px; }
 
-.orbit-stage { position:relative; height:78vh; min-height:560px; perspective:1400px; overflow:hidden; touch-action:none; }
+.orbit-stage { position:relative; height:78dvh; min-height:560px; perspective:1400px; overflow:hidden; touch-action:none; }
 .orbit-spot { position:absolute; width:600px; height:600px; border-radius:50%; pointer-events:none; z-index:1;
   background:radial-gradient(circle, var(--page-glow) 0%, transparent 65%); transform:translate(-50%,-50%); mix-blend-mode:screen; }
 .orbit-ring { position:absolute; left:50%; top:50%; transform-style:preserve-3d; }
@@ -124,7 +124,7 @@
 @media (max-width:760px){ .zz-row,.zz-row.right{ flex-direction:column; text-align:left; align-items:flex-start;} .zz-row.right .zz-info{align-items:flex-start;} .zz-thumb{flex:none; width:100%;} }
 
 /* side panel */
-.side-panel { position:fixed; top:0; right:0; width:min(520px,92vw); height:100vh; z-index:950;
+.side-panel { position:fixed; top:0; right:0; width:min(520px,92vw); height:100dvh; z-index:950;
   background:var(--bg-elevated); border-left:1px solid var(--border); padding:90px clamp(24px,3vw,46px) 40px;
   transform:translateX(100%); transition:transform .6s var(--ease-cinema); overflow-y:auto; }
 .side-panel.open { transform:none; box-shadow:-40px 0 80px -30px rgba(0,0,0,0.8); }
@@ -143,7 +143,7 @@
    ABOUT — los fragmentos
    =================================================================== */
 .about { background:#060810; }
-.about-hero { min-height:90vh; display:grid; place-items:center; padding:120px clamp(20px,6vw,110px) 40px; text-align:center; }
+.about-hero { min-height:90dvh; display:grid; place-items:center; padding:120px clamp(20px,6vw,110px) 40px; text-align:center; }
 .glitch-name { font-family:var(--f-head); font-weight:800; font-size:clamp(40px,9vw,116px); line-height:0.9; letter-spacing:-0.02em; position:relative; cursor:none; }
 .glitch-name .gl-layer { position:absolute; inset:0; }
 .glitch-name.go::before { content:attr(data-text); position:absolute; left:0; top:0; color:var(--cold); clip-path:polygon(0 12%,100% 12%,100% 40%,0 40%); transform:translateX(-4px); }
@@ -177,7 +177,7 @@
 .award-event { font-size:clamp(15px,1.8vw,20px); color:var(--text); }
 .award-year { font-family:var(--f-mono); font-size:13px; color:var(--warm); }
 @media (max-width:760px){ .award-row{ grid-template-columns:32px 56px 1fr; } .award-year{ grid-column:2/-1; } }
-.chapter { min-height:80vh; display:grid; align-content:center; gap:24px; max-width:900px; margin:0 auto; }
+.chapter { min-height:80dvh; display:grid; align-content:center; gap:24px; max-width:900px; margin:0 auto; }
 .chapter .ch-tag { font-family:var(--f-mono); font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:var(--page-accent); }
 .chapter h2 { font-family:var(--f-head); font-weight:800; font-size:clamp(34px,6vw,80px); line-height:0.95; }
 .chapter .ch-body { font-size:clamp(16px,1.8vw,22px); color:var(--text); max-width:680px; line-height:1.6; }
@@ -207,12 +207,12 @@
   width: 100vw;                               /* break-out del max-width del chapter */
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  height: 320vh;                              /* zona de scroll para dibujar la espiral */
+  height: 320svh;                              /* zona de scroll para dibujar la espiral — svh evita que crezca cuando la barra iOS se colapsa */
   margin-top: 18px;
 }
 .tl-sp-stage {
   position: sticky; top: 0;
-  height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-rows: 1fr auto;
   overflow: hidden;
@@ -223,7 +223,7 @@
 .tl-sp-viewport {
   position: relative; overflow: hidden;
   width: 100%;
-  height: min(calc(100vh - 90px), 720px);
+  height: min(calc(100dvh - 90px), 720px);
   display: flex; align-items: center; justify-content: flex-start;
 }
 .tl-sp-pan {
@@ -336,7 +336,7 @@
 .hz-tl-sticky {
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-rows: 1fr auto;
   align-items: stretch;
@@ -602,7 +602,7 @@
    =================================================================== */
 .orbital-wrap {
   position: relative;
-  height: 100vh;
+  height: 100dvh;
   min-height: 720px;
   overflow: hidden;
   isolation: isolate;
@@ -805,7 +805,7 @@
 
 @media (max-width: 760px) {
   .orbital-info {
-    width: 100%; top: auto; bottom: 0; height: 55vh;
+    width: 100%; top: auto; bottom: 0; height: 55dvh;
     border-left: none; border-top: 1px solid var(--border);
     transform: translateY(100%);
   }
@@ -850,7 +850,7 @@
    PLAY — el laboratorio
    =================================================================== */
 .play { background:#030604; }
-.play-intro { min-height:100vh; display:grid; place-items:center; text-align:center; padding:0 clamp(20px,6vw,110px); }
+.play-intro { min-height:100dvh; display:grid; place-items:center; text-align:center; padding:0 clamp(20px,6vw,110px); }
 .play-title { font-family:var(--f-head); font-weight:800; font-size:clamp(48px,14vw,200px); line-height:0.9; letter-spacing:-0.01em; }
 .play-hud { font-family:var(--f-mono); font-size:12px; letter-spacing:0.1em; color:var(--text-mid); display:flex; gap:24px; justify-content:center; margin-top:26px; flex-wrap:wrap; }
 .play-hud b { color:var(--green); }
@@ -872,9 +872,9 @@
 .moment-head h2 { font-family:var(--f-head); font-weight:800; font-size:clamp(26px,4vw,52px); line-height:1; }
 .moment-head .m-id { font-family:var(--f-mono); font-size:12px; color:var(--page-accent); letter-spacing:0.1em; }
 .moment-head p { color:var(--text-mid); font-size:14px; max-width:360px; }
-.moment-canvas { height:min(64vh,560px); border-radius:6px; overflow:hidden; }
-.moment.wide .moment-canvas { height:min(74vh,640px); }
-.play-final { min-height:100vh; display:grid; place-items:center; text-align:center; position:relative; }
+.moment-canvas { height:min(64svh,560px); border-radius:6px; overflow:hidden; }
+.moment.wide .moment-canvas { height:min(74svh,640px); }
+.play-final { min-height:100dvh; display:grid; place-items:center; text-align:center; position:relative; }
 .play-final .blob { position:absolute; left:6%; bottom:8%; width:240px; height:240px; border-radius:50%;
   background:radial-gradient(circle at 40% 40%, var(--green), transparent 70%); filter:blur(18px); opacity:0.08; transition:opacity .6s; }
 .play-final .blob:hover { opacity:0.7; }
@@ -883,7 +883,7 @@
 .shader-fs { position:fixed; inset:0; z-index:960; background:#04060a; display:grid; grid-template-rows:1fr auto; }
 .shader-fs .fs-canvas { position:relative; }
 .shader-fs .fs-bar { display:flex; justify-content:space-between; align-items:center; padding:16px 24px; border-top:1px solid var(--border); font-family:var(--f-mono); font-size:12px; color:var(--text-mid); }
-.shader-fs .fs-src { max-height:30vh; overflow:auto; background:var(--bg); border-top:1px solid var(--border); padding:18px 24px; font-family:var(--f-mono); font-size:11px; line-height:1.7; color:var(--text-mid); white-space:pre; display:none; }
+.shader-fs .fs-src { max-height:30svh; overflow:auto; background:var(--bg); border-top:1px solid var(--border); padding:18px 24px; font-family:var(--f-mono); font-size:11px; line-height:1.7; color:var(--text-mid); white-space:pre; display:none; }
 .shader-fs .fs-src.show { display:block; }
 
 /* description panel inside fullscreen shader */
@@ -935,7 +935,7 @@
 /* ===================================================================
    CONTACT — la terminal
    =================================================================== */
-.contact { position:relative; background:var(--bg); min-height:100vh; display:grid; place-items:center; padding:120px clamp(20px,6vw,80px) 90px; overflow:hidden; }
+.contact { position:relative; background:var(--bg); min-height:100dvh; display:grid; place-items:center; padding:120px clamp(20px,6vw,80px) 90px; overflow:hidden; }
 
 /* --- 1 · ambient background scene --- */
 .contact-bg { position:absolute; inset:0; z-index:0; }
@@ -1395,7 +1395,7 @@ body.in-work .cursor-trail { opacity: 0 !important; }
 .moment-sequence-stage {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -1506,7 +1506,7 @@ body.in-work .cursor-trail { opacity: 0 !important; }
 .pinned-sticky {
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -1624,7 +1624,7 @@ body.in-work .cursor-trail { opacity: 0 !important; }
    card follows the cursor with soft lag.
    ===================================================================== */
 .hs-chapter {
-  min-height: 100vh;
+  min-height: 100dvh;
   max-width: none;
   width: 100%;
   padding: clamp(120px, 14vh, 220px) clamp(20px, 6vw, 110px);
@@ -1662,7 +1662,7 @@ body.in-work .cursor-trail { opacity: 0 !important; }
   position: relative;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: minmax(180px, 22vh);
+  grid-auto-rows: minmax(180px, 22svh);
   gap: 16px;
   max-width: 1440px;
   margin: 0 auto;
@@ -1881,7 +1881,7 @@ body.in-work .cursor-trail { opacity: 0 !important; }
 @media (max-width: 900px) {
   .hs-chapter { padding: clamp(80px, 12vh, 140px) 20px; min-height: auto; }
   .hs-tagline { font-size: clamp(36px, 8vw, 56px); }
-  .hs-bento { grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(140px, 20vh); }
+  .hs-bento { grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(160px, auto); }
   .hs-tile { grid-column: auto; }
   .hs-tile-name { font-size: clamp(24px, 6vw, 34px) !important; }
   .hs-galaxy { display: none; }

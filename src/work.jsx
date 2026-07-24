@@ -1054,7 +1054,7 @@ function ZigzagReveal({ projects, filterKey, disabled, tools, selected, onSelect
 
   return (
     <div className="zzr-wrap" ref={wrapRef} style={{ height: trackHeight, position:'relative' }}>
-      <div className="zzr-sticky" style={{ position:'sticky', top:0, height:'100vh', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div className="zzr-sticky" style={{ position:'sticky', top:0, height:'100dvh', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
         {/* filter pills — pinned, so they stay visible for the whole sequence */}
         <div className="zzr-pills" style={{ position:'absolute', top:'clamp(78px,11vh,120px)', left:'clamp(20px,6vw,110px)', right:'clamp(20px,6vw,110px)', zIndex:15 }}>
           <ToolPills tools={tools} selected={selected} onSelect={onSelect}/>

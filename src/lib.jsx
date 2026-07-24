@@ -507,6 +507,40 @@ function ShaderCanvas({ frag, accent='#4ade80', label, source, onExpand, variant
   );
 }
 
+/* ===================================================================
+   BODY SCROLL LOCK — iOS-safe (fixes rubber-band under overlays)
+   Chains: multiple simultaneous locks (nav + modal) are ref-counted so
+   the first lock captures scrollY and the last unlock restores it.
+   Use for: mobile nav open, filter curtain, cert modal, preloader.
+   =================================================================== */
+let __lockCount = 0;
+let __lockScrollY = 0;
+function lockBodyScroll(){
+  if (__lockCount++ > 0) return;
+  __lockScrollY = window.scrollY || window.pageYOffset || 0;
+  const body = document.body;
+  body.style.top = `-${__lockScrollY}px`;
+  body.classList.add('no-scroll');
+  if (window.__lenis && window.__lenis.stop) window.__lenis.stop();
+}
+function unlockBodyScroll(){
+  if (__lockCount <= 0) return;
+  if (--__lockCount > 0) return;
+  const body = document.body;
+  body.classList.remove('no-scroll');
+  body.style.top = '';
+  window.scrollTo(0, __lockScrollY);
+  if (window.__lenis && window.__lenis.start) window.__lenis.start();
+}
+
+/* Cheap touch device probe. Prefer this over ad-hoc matchMedia calls. */
+const IS_TOUCH_DEVICE = (typeof window !== 'undefined') && (
+  window.matchMedia('(pointer: coarse)').matches ||
+  ('ontouchstart' in window) ||
+  (navigator.maxTouchPoints > 0)
+);
+function isTouchDevice(){ return IS_TOUCH_DEVICE; }
+
 Object.assign(window, {
   PAGE_TOKENS, STRINGS, tr, LangContext, useLang, useT,
   useScrollVelocityStore, Mouse, useScramble, useReveal,
@@ -514,4 +548,5 @@ Object.assign(window, {
   BP, useViewport, useBreakpoint,
   subscribeViewport: ViewportStore.subscribe,
   getViewport: ViewportStore.get,
+  lockBodyScroll, unlockBodyScroll, isTouchDevice,
 });

@@ -530,7 +530,7 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
         <div className="certs-pin-wrap" ref={wrapRef} style={{ height: trackHeight, position: 'relative' }}>
           <div
             className="certs-pin-sticky"
-            style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ position: 'sticky', top: 0, height: '100dvh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <div className="certs-pin-pills">{filterPills}</div>
             <div className="certs-pin-stage">{railLayout}</div>

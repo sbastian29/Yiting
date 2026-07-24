@@ -12,10 +12,13 @@
    =================================================================== */
 (function initScrollSystem(){
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Touch devices get native scroll (rubber-band + address-bar collapse intact).
+  // Lenis + syncTouch fights iOS Safari and causes address-bar jitter.
+  const coarse = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window);
 
   // LENIS: smooth-scroll engine — EXAGGERATED config (heavy mass, long glide).
-  // prefers-reduced-motion fully disables Lenis → native scroll, no FX.
-  if (window.Lenis && !reduce){
+  // prefers-reduced-motion or coarse pointer → native scroll, no Lenis.
+  if (window.Lenis && !reduce && !coarse){
     const expoOut = (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t));
     const lenis = new window.Lenis({
       duration: 2.8,            // long, cinematic
@@ -58,6 +61,11 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { lenis.resize(); if (window.ScrollTrigger) ScrollTrigger.refresh(); });
   } else if (window.gsap && window.ScrollTrigger){
     gsap.registerPlugin(ScrollTrigger);
+    // Touch: normalize scroll so pinned/scrubbed triggers survive iOS
+    // address-bar collapse without jump on refresh.
+    if (coarse && window.ScrollTrigger.normalizeScroll) {
+      try { window.ScrollTrigger.normalizeScroll(true); } catch(e){}
+    }
   }
 
   // LENIS: nav jumps feel like a long voyage (duration 3.2) vs normal scroll.

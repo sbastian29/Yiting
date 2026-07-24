@@ -1,6 +1,42 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: auto; }
+html {
+  scroll-behavior: auto;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: clip;
+}
+
+/* iOS-safe body scroll lock — JS sets top=-scrollY then restores it */
+body.no-scroll {
+  position: fixed;
+  left: 0; right: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Kill 300ms tap delay on legacy WebViews + magnify touch surfaces */
+a, button, [role="button"], input, select, textarea, label {
+  touch-action: manipulation;
+}
+
+/* Accessible skip-link — visible on focus */
+.skip-link {
+  position: fixed;
+  top: 8px; left: 8px;
+  z-index: 10000;
+  padding: 10px 14px;
+  background: var(--page-accent);
+  color: #060608;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  transform: translateY(-140%);
+  transition: transform 0.25s var(--ease-out);
+}
+.skip-link:focus-visible { transform: none; outline: 2px solid #060608; outline-offset: 2px; }
 
 /* ---- Lenis smooth-scroll ---- */
 html.lenis, html.lenis body { height: auto; }
@@ -284,7 +320,7 @@ img { max-width: 100%; display: block; }
   font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em;
   text-transform: uppercase; color: var(--text-mid);
 }
-.page { position: relative; min-height: 100vh; }
+.page { position: relative; min-height: 100vh; min-height: 100dvh; }
 .section-pad { padding: 0 clamp(20px, 6vw, 110px); }
 
 /* full-bleed placeholder */
@@ -314,7 +350,7 @@ img { max-width: 100%; display: block; }
 }
 
 /* mobile */
-@media (max-width: 760px) {
+@media (max-width: 767.98px) {
   .nav-main { display: none; }
   .live-status { display: none; }
   .menu-btn { display: block; }
@@ -322,6 +358,10 @@ img { max-width: 100%; display: block; }
     display: flex; flex-direction: column; position: fixed; inset: 0;
     background: rgba(6,6,8,0.96); backdrop-filter: blur(20px);
     justify-content: center; align-items: center; gap: 28px; z-index: 950;
+    overscroll-behavior: contain;
+    touch-action: none;
   }
-  .nav-main.open .nav-link { font-size: 26px; }
+  .nav-main.open .nav-link { font-size: 26px; padding: 12px 20px; }
+  /* hide native scrollbar on Chrome Android landscape (no reserved space) */
+  ::-webkit-scrollbar { display: none; }
 }
