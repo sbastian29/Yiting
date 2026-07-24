@@ -80,6 +80,54 @@ function useMediaQuery(query) {
   return matches;
 }
 
+/* ---- focus trap for modal-like overlays: saves + restores focus,
+   moves initial focus in, traps Tab within root, and inerts the
+   known page-root siblings while active ---- */
+function useFocusTrap(rootRef, isActive) {
+  const returnFocusRef = useRef(null);
+  useEffect(() => {
+    if (!isActive) return;
+    const root = rootRef.current;
+    if (!root) return;
+    returnFocusRef.current = document.activeElement;
+
+    const raf = requestAnimationFrame(() => {
+      const first = root.querySelector('[data-autofocus], .cert-modal-close, button, [href], input, [tabindex]:not([tabindex="-1"])');
+      if (first) first.focus();
+    });
+
+    const onKey = (e) => {
+      if (e.key !== 'Tab') return;
+      const focusables = root.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+      else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+    };
+    root.addEventListener('keydown', onKey);
+
+    // inert the known page roots (not every body child — the modal itself
+    // is a fixed-position sibling of these, not a descendant of them)
+    const siblings = Array.from(document.querySelectorAll('.certs-nav, .certs-shell, .certs-curtain'));
+    const prev = siblings.map(el => ({ el, inert: el.inert, aria: el.getAttribute('aria-hidden') }));
+    siblings.forEach(el => { el.inert = true; el.setAttribute('aria-hidden', 'true'); });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      root.removeEventListener('keydown', onKey);
+      prev.forEach(({ el, inert, aria }) => {
+        el.inert = inert;
+        if (aria == null) el.removeAttribute('aria-hidden'); else el.setAttribute('aria-hidden', aria);
+      });
+      const rf = returnFocusRef.current;
+      if (rf && document.contains(rf) && typeof rf.focus === 'function') rf.focus();
+    };
+  }, [isActive]);
+}
+
 /* tiny i18n picker — mirrors the site's {es,en,zh} node shape */
 function tr(node, lang) {
   if (node == null) return '';
@@ -338,6 +386,17 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
           <ul
             className={'certs-tilegrid' + (hovered !== null ? ' is-hovering' : '')}
             ref={scrollerRef}
+            onFocus={hoverEnabled ? (e) => {
+              const btn = e.target.closest('.cert-tile');
+              if (!btn) return;
+              const idx = Number(btn.dataset.i);
+              if (!Number.isNaN(idx)) setHovered(idx);
+              // TODO(a11y-scroll-into-view): compute progress from focused tile Y and
+              // window.scrollTo instead of relying on browser auto-scroll into the mask.
+            } : undefined}
+            onBlur={hoverEnabled ? (e) => {
+              if (!e.currentTarget.contains(e.relatedTarget)) setHovered(null);
+            } : undefined}
           >
             {items.map(({ c, i }, pos) => {
               const isTyped = TYPED.has(c.type);
@@ -346,11 +405,10 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
                   <button
                     type="button"
                     data-type={isTyped ? c.type : undefined}
+                    data-i={i}
                     className={'cert-tile' + (hovered === i ? ' is-active' : '')}
                     aria-label={tr(c.name, lang)}
                     onMouseEnter={() => hoverEnabled && setHovered(i)}
-                    onFocus={() => hoverEnabled && setHovered(i)}
-                    onBlur={() => hoverEnabled && setHovered(null)}
                     onClick={() => onOpen(pos)}
                   >
                     <span className="cert-tile-panel">
@@ -451,6 +509,9 @@ function RailLegend({ lang }) {
 function CertModal({ certs, lang, index, onClose, onNav, filter }) {
   const overlayRef = useRef(null);
   const cardRef = useRef(null);
+  const backdropRef = useRef(null);
+
+  useFocusTrap(overlayRef, true);
 
   // visible subset (respects the active grid filter) + absolute index per
   // item, so nav arrows stay within the filtered set while codeFor() keeps
@@ -525,11 +586,19 @@ function CertModal({ certs, lang, index, onClose, onNav, filter }) {
 
   const isTyped = TYPED.has(c.type);
 
+  const handleRootClick = (e) => {
+    if (e.target === overlayRef.current || e.target === backdropRef.current) {
+      onClose();
+    }
+  };
+
   return (
     <div className="cert-modal" ref={overlayRef} role="dialog" aria-modal="true"
-         aria-label={tr(c.name, lang)} data-type={isTyped ? c.type : undefined}>
-      <div className="cert-modal-backdrop" aria-hidden="true"></div>
+         aria-label={tr(c.name, lang)} data-type={isTyped ? c.type : undefined}
+         onClick={handleRootClick}>
+      <div className="cert-modal-backdrop" ref={backdropRef} aria-hidden="true"></div>
 
+      {/* TODO: add "press ESC" microcopy near close */}
       <button type="button" className="cert-modal-close" onClick={onClose}
               aria-label={tr(UI.close, lang)}>
         <span aria-hidden="true">✕</span>
@@ -543,7 +612,7 @@ function CertModal({ certs, lang, index, onClose, onNav, filter }) {
               onClick={() => onNav((index + 1) % visibleCerts.length)}
               aria-label="Next">›</button>
 
-      <div className="cert-modal-card" ref={cardRef}>
+      <div className="cert-modal-card" ref={cardRef} onClick={(e) => e.stopPropagation()}>
         <div className="cmc-media">
           <Badge cert={c} wrapClass="cmc-badge" note={typeLabel(c.type, lang)} />
           <div className="cmc-code">{codeFor(absIndex)}</div>
@@ -817,14 +886,17 @@ function CertsNav({ lang, setLang }) {
 
 /* =================================================================
    CertsLoader — standalone initial loader.
-   Counter 0→100 over ~2.2s, mosaic of badge images faded low behind
+   Counter 0→100 over ~0.6s, mosaic of badge images faded low behind
    it, vignette for focus. Fades out on completion, then unmounts;
    the underlying page then mounts fresh so its own reveal (nav +
-   header + tile clip-path stagger) fires visibly.
+   header + tile clip-path stagger) fires visibly. Skipped entirely
+   on repeat visits within the session (see sessionStorage check in
+   CertificationsPage).
    ================================================================= */
 function CertsLoader({ certs, onDone }) {
-  const [n, setN] = useState(0);
   const rootRef = useRef(null);
+  const numRef = useRef(null);
+  const barRef = useRef(null);
 
   useEffect(() => {
     lockBody();
@@ -833,7 +905,8 @@ function CertsLoader({ certs, onDone }) {
     const g = window.gsap;
     const reduce = prefersReduce();
     if (!g || reduce) {
-      setN(100);
+      if (numRef.current) numRef.current.textContent = '100';
+      if (barRef.current) barRef.current.style.width = '100%';
       const id = requestAnimationFrame(() => {
         unlockOnce();
         if (onDone) onDone();
@@ -843,9 +916,13 @@ function CertsLoader({ certs, onDone }) {
     const counter = { v: 0 };
     const tw = g.to(counter, {
       v: 100,
-      duration: 2.2,
+      duration: 0.6,
       ease: 'power2.inOut',
-      onUpdate: () => setN(Math.round(counter.v)),
+      onUpdate: () => {
+        const nv = Math.round(counter.v);
+        if (numRef.current) numRef.current.textContent = String(nv).padStart(3, '0');
+        if (barRef.current) barRef.current.style.width = nv + '%';
+      },
       onComplete: () => {
         g.to(rootRef.current, {
           autoAlpha: 0,
@@ -877,7 +954,7 @@ function CertsLoader({ certs, onDone }) {
   }, [certs]);
 
   return (
-    <div className="certs-loader" ref={rootRef} role="status" aria-label="Loading">
+    <div className="certs-loader" ref={rootRef}>
       <div className="certs-loader-mosaic" aria-hidden="true">
         {mosaicItems.map((c, i) => (
           <Badge key={i} cert={c || {}} wrapClass="clm-cell" />
@@ -885,9 +962,11 @@ function CertsLoader({ certs, onDone }) {
       </div>
       <div className="certs-loader-vignette" aria-hidden="true"></div>
       <div className="certs-loader-center">
-        <div className="certs-loader-label">Y4 / CERT · INDEX</div>
-        <div className="certs-loader-num">{String(n).padStart(3, '0')}<span className="cln-pct">%</span></div>
-        <div className="certs-loader-bar"><span style={{ width: n + '%' }} /></div>
+        <div className="certs-loader-label" role="status" aria-live="polite">Y4 / CERT · INDEX — Loading</div>
+        <div aria-hidden="true">
+          <div className="certs-loader-num"><span ref={numRef}>000</span><span className="cln-pct">%</span></div>
+          <div className="certs-loader-bar"><span ref={barRef} style={{ width: '0%' }} /></div>
+        </div>
       </div>
     </div>
   );
@@ -896,7 +975,12 @@ function CertsLoader({ certs, onDone }) {
 /* ============================== PAGE ================================== */
 function CertificationsPage() {
   const certs = (window.CERTS_DATA && window.CERTS_DATA.length) ? window.CERTS_DATA : [];
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    try {
+      if (sessionStorage.getItem('certsLoaded')) return false;
+    } catch (e) {}
+    return true;
+  });
   const [lang, setLang] = useState('es');
   const [modalIdx, setModalIdx] = useState(null);   // null → grid only; number → modal open
   const [filter, setFilter] = useState(null);
@@ -925,9 +1009,13 @@ function CertificationsPage() {
   useEffect(() => { setModalIdx(null); }, [filter]);
 
   if (loading) {
+    const done = () => {
+      try { sessionStorage.setItem('certsLoaded', '1'); } catch (e) {}
+      setLoading(false);
+    };
     return (
       <div className="certs-page is-loading" data-screen-label="Certifications">
-        <CertsLoader certs={certs} onDone={() => setLoading(false)} />
+        <CertsLoader certs={certs} onDone={done} />
       </div>
     );
   }
