@@ -111,7 +111,7 @@ function HorizontalTimeline(){
   }, [vp.w, vp.h, bp]);
 
   useEffect(() => {
-    if (reduce || isMobile) return;
+    if (reduce || isMobile || isTablet) return;
     const wrap = wrapRef.current;
     if (!wrap) return;
     let raf = 0;
@@ -131,10 +131,12 @@ function HorizontalTimeline(){
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [N, reduce, isMobile]);
+  }, [N, reduce, isMobile, isTablet]);
 
-  /* --------- REDUCED MOTION / MOBILE: readable list, `rise` reveal ------ */
-  if (reduce || isMobile) {
+  /* --------- REDUCED MOTION / MOBILE / TABLET: readable list, `rise` reveal
+     Tablet (768) also gets the static list — the horizontal wave was designed
+     for wide viewports and collides with itself at portrait iPad width. */
+  if (reduce || isMobile || isTablet) {
     return (
       <div className="hz-tl-wrap hz-tl-static">
         <ol className="hz-tl-list">
@@ -454,8 +456,6 @@ function ChapterRail({ total, active, chapters }){
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch(e){ return false; }
   })();
-  // hide the rail below the tablet breakpoint (mobile)
-  if (bp === 'mobile') return null;
   const list = Array.isArray(chapters) ? chapters : null;
   const count = list ? list.length : total;
   const go = (i) => {
@@ -468,6 +468,45 @@ function ChapterRail({ total, active, chapters }){
       window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
     }
   };
+
+  // Mobile: horizontal chip-nav pinned to the top, scrolls the active chip into
+  // view. Awwwards judges shouldn't have to scroll blindly through 8 chapters —
+  // labels are visible, tappable, and the active state tracks the section.
+  const mobileNavRef = useRef(null);
+  useEffect(() => {
+    if (bp !== 'mobile') return;
+    const nav = mobileNavRef.current;
+    if (!nav) return;
+    const chip = nav.querySelector('.chapter-chip.on');
+    if (chip && chip.scrollIntoView) {
+      chip.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [active, bp, reduce]);
+
+  if (bp === 'mobile'){
+    return (
+      <nav className="chapter-chipnav" aria-label="Chapters" ref={mobileNavRef}>
+        <div className="chapter-chipnav-inner">
+          {Array.from({ length: count }, (_, i) => {
+            const label = (list && list[i] && list[i].label) || ('chapter ' + (i + 1));
+            return (
+              <button
+                key={i}
+                type="button"
+                className={'chapter-chip' + (i === active ? ' on' : '')}
+                aria-current={i === active ? 'true' : 'false'}
+                onClick={() => go(i)}
+              >
+                <span className="chapter-chip-num">{String(i + 1).padStart(2, '0')}</span>
+                <span className="chapter-chip-label">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    );
+  }
+
   const bars = [];
   for (let i = 0; i < count; i++){
     const label = (list && list[i] && list[i].label) || ('chapter ' + (i + 1));

@@ -174,7 +174,7 @@
 .award-row { display:grid; grid-template-columns:42px 70px 1fr auto; align-items:baseline; gap:18px; padding:20px 0; border-top:1px solid var(--border); }
 .award-medal { position:relative; display:inline-block; font-size:22px; }
 .award-place { font-family:var(--f-head); font-weight:800; font-size:clamp(18px,2vw,26px); color:var(--text); }
-.award-event { font-size:clamp(15px,1.8vw,20px); color:var(--text); }
+.award-event { font-size:clamp(15px,1.8vw,20px); color:var(--text); overflow-wrap:anywhere; word-break:break-word; }
 .award-year { font-family:var(--f-mono); font-size:13px; color:var(--warm); }
 @media (max-width:760px){ .award-row{ grid-template-columns:32px 56px 1fr; } .award-year{ grid-column:2/-1; } }
 .chapter { min-height:80dvh; display:grid; align-content:center; gap:24px; max-width:900px; margin:0 auto; }
@@ -554,13 +554,13 @@
   white-space: nowrap;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 767.98px) {
   .hz-node { width: 140px; }
-  .hz-title { font-size: 12.5px; }
-  .hz-year  { font-size: 10px; }
-  .hz-org   { font-size: 9.5px; }
-  .hz-desc  { font-size: 11.5px; }
-  .hz-tl-stage { height: clamp(340px, 60vh, 460px); }
+  .hz-title { font-size: 13px; }
+  .hz-year  { font-size: 11px; }
+  .hz-org   { font-size: 11px; }
+  .hz-desc  { font-size: 12.5px; }
+  .hz-tl-stage { height: clamp(340px, 60dvh, 460px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .hz-dot-ring { animation: none; }
@@ -1235,11 +1235,12 @@ textarea.cf-input { resize:vertical; min-height:120px; line-height:1.6; }
   padding: clamp(22px, 3vw, 44px);
 }
 .flip-toggle {
-  position: absolute; top: 12px; right: 12px;
-  width: 34px; height: 34px; display: grid; place-items: center;
+  position: absolute; top: 10px; right: 10px;
+  min-width: 44px; min-height: 44px; display: grid; place-items: center;
   border: 1px solid var(--border); border-radius: 50%;
   background: rgba(6,8,10,0.55); color: var(--text-mid);
   font-size: 16px; z-index: 5; transition: color .25s, border-color .25s, background .25s;
+  touch-action: manipulation;
 }
 .flip-toggle:hover { color: var(--green); border-color: var(--green); background: rgba(6,8,10,0.8); }
 .fb-head { display: flex; align-items: center; }
@@ -1682,6 +1683,70 @@ body.in-work .cursor-trail { opacity: 0 !important; }
 .chapter-rail.reduce .chr-bar { transition: none; }
 @media (max-width: 900px) {
   .chapter-rail { display: none; }
+}
+
+/* Mobile chip-nav for About chapters — replaces the desktop rail on <768.
+   Fixed pill-shaped scroller under the site header, horizontal scroll with
+   snap, active chip flush-visible. Touch-friendly 44px hit targets. */
+.chapter-chipnav {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 68px);
+  left: 12px; right: 12px;
+  z-index: 40;
+  background: rgba(6,6,8,0.72);
+  border: 1px solid var(--border, #1f1f2e);
+  border-radius: 30px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+.chapter-chipnav-inner {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.chapter-chipnav-inner::-webkit-scrollbar { display: none; }
+.chapter-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 14px 4px 10px;
+  border-radius: 22px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-mid, #5c5a6e);
+  font-family: var(--f-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  scroll-snap-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 0.25s, border-color 0.25s, background 0.25s;
+}
+.chapter-chip-num {
+  font-size: 10px;
+  color: var(--page-accent, #7dd3fc);
+  letter-spacing: 0.14em;
+}
+.chapter-chip-label {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.chapter-chip.on {
+  background: rgba(125,211,252,0.1);
+  border-color: var(--page-accent, #7dd3fc);
+  color: var(--text, #e8e6f0);
+}
+@media (min-width: 768px) {
+  .chapter-chipnav { display: none; }
 }
 
 /* =====================================================================

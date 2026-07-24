@@ -320,7 +320,7 @@ img { max-width: 100%; display: block; }
   font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em;
   text-transform: uppercase; color: var(--text-mid);
 }
-.page { position: relative; min-height: 100vh; min-height: 100dvh; }
+.page { position: relative; min-height: 100vh; min-height: 100dvh; overflow-x: clip; }
 .section-pad { padding: 0 clamp(20px, 6vw, 110px); }
 
 /* full-bleed placeholder */

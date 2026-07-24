@@ -68,7 +68,9 @@ function MomentSequence({ shaders, total, onExpand }) {
   const N = shaders.length;
   const bp = useBreakpoint();
   const vp = useViewport();
-  const disablePin = vp.reduceMotion || bp === 'mobile';
+  // Pin+scrub is desktop-only. On tablet the flip-card overflows the pinned
+   // 100dvh stage and the moment-slide's internal overflow-y traps Lenis.
+   const disablePin = vp.reduceMotion || bp === 'mobile' || bp === 'tablet';
   const [active, setActive] = useState(0);
 
   useEffect(() => {
@@ -142,9 +144,12 @@ function MomentSequence({ shaders, total, onExpand }) {
   };
 
   const isMobile = bp === 'mobile';
-  const dotsStyle = isMobile
-    ? { position:'fixed', left:0, right:0, bottom:12, display:'flex', gap:6, justifyContent:'center', alignItems:'center', flexWrap:'wrap', padding:'8px 12px', zIndex:40 }
-    : { position:'fixed', right:20, top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', gap:10, alignItems:'center', zIndex:40 };
+
+  // Mobile prev/next affordances (44px touch targets). On desktop the dot rail
+   // is fine at the right edge; on mobile 8 dots + counter used to wrap and
+   // overlap the CTA. This layout stays flat, always fits in 375px.
+  const prev = () => goTo(Math.max(0, active - 1));
+  const next = () => goTo(Math.min(N - 1, active + 1));
 
   return (
     <div ref={wrapRef} className="moment-sequence-wrap" style={{ height: disablePin ? 'auto' : `${N * 180}vh` }}>
@@ -155,19 +160,42 @@ function MomentSequence({ shaders, total, onExpand }) {
           </div>
         ))}
       </div>
-      <div className="play-dots" role="tablist" aria-label="experiments" style={dotsStyle}>
-        {shaders.map((s, i) => (
-          <button key={s.id} type="button" role="tab" aria-selected={i === active}
-            aria-label={'Experiment ' + (i + 1)} onClick={() => goTo(i)}
-            style={{ width: i === active ? 12 : 8, height: i === active ? 12 : 8, borderRadius: '50%',
-                     border: '1px solid var(--page-accent,#4ade80)',
-                     background: i === active ? 'var(--page-accent,#4ade80)' : 'transparent',
-                     padding: 0, cursor: 'pointer', transition: 'all .25s', flex: '0 0 auto' }}/>
-        ))}
-        <span className="mono-tag" style={{ marginLeft: isMobile ? 8 : 0, marginTop: isMobile ? 0 : 8, fontSize: 11, color: 'var(--page-accent,#4ade80)' }}>
-          {String(active + 1).padStart(2, '0')}/{String(total).padStart(2, '0')}
-        </span>
-      </div>
+
+      {isMobile ? (
+        <div className="play-dots play-dots-mobile" role="tablist" aria-label="experiments"
+             style={{ position:'fixed', left:12, right:12, bottom:`calc(14px + env(safe-area-inset-bottom, 0px))`,
+                      display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, zIndex:40,
+                      padding:'8px 12px', background:'rgba(6,6,8,0.72)', border:'1px solid var(--border,#1f1f2e)',
+                      borderRadius:24, backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)' }}>
+          <button type="button" aria-label="Previous experiment" onClick={prev} disabled={active===0}
+                  style={{ minWidth:44, minHeight:44, borderRadius:'50%', border:'1px solid var(--page-accent,#4ade80)',
+                           background:'transparent', color:'var(--page-accent,#4ade80)', fontSize:20, lineHeight:1,
+                           opacity: active===0 ? 0.3 : 1, cursor:'pointer', display:'grid', placeItems:'center', touchAction:'manipulation' }}>‹</button>
+          <span className="mono-tag" style={{ fontSize:12, color:'var(--page-accent,#4ade80)', letterSpacing:'0.14em' }}>
+            {String(active + 1).padStart(2, '0')}<span style={{opacity:0.5, margin:'0 4px'}}>/</span>{String(total).padStart(2, '0')}
+          </span>
+          <button type="button" aria-label="Next experiment" onClick={next} disabled={active===N-1}
+                  style={{ minWidth:44, minHeight:44, borderRadius:'50%', border:'1px solid var(--page-accent,#4ade80)',
+                           background:'transparent', color:'var(--page-accent,#4ade80)', fontSize:20, lineHeight:1,
+                           opacity: active===N-1 ? 0.3 : 1, cursor:'pointer', display:'grid', placeItems:'center', touchAction:'manipulation' }}>›</button>
+        </div>
+      ) : (
+        <div className="play-dots" role="tablist" aria-label="experiments"
+             style={{ position:'fixed', right:20, top:'50%', transform:'translateY(-50%)',
+                      display:'flex', flexDirection:'column', gap:10, alignItems:'center', zIndex:40 }}>
+          {shaders.map((s, i) => (
+            <button key={s.id} type="button" role="tab" aria-selected={i === active}
+              aria-label={'Experiment ' + (i + 1)} onClick={() => goTo(i)}
+              style={{ width: i === active ? 12 : 8, height: i === active ? 12 : 8, borderRadius: '50%',
+                       border: '1px solid var(--page-accent,#4ade80)',
+                       background: i === active ? 'var(--page-accent,#4ade80)' : 'transparent',
+                       padding: 0, cursor: 'pointer', transition: 'all .25s', flex: '0 0 auto' }}/>
+          ))}
+          <span className="mono-tag" style={{ marginTop: 8, fontSize: 11, color: 'var(--page-accent,#4ade80)' }}>
+            {String(active + 1).padStart(2, '0')}/{String(total).padStart(2, '0')}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
