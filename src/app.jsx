@@ -53,8 +53,12 @@ function App(){
     <LangContext.Provider value={{ lang, setLang }}>
       <ToastProvider>
         <CustomCursor/>
+        <a className="skip-link" href="#main"
+           onClick={(e)=>{ e.preventDefault(); const m = document.getElementById('main'); if (m){ m.setAttribute('tabindex','-1'); m.focus({preventScroll:false}); m.scrollIntoView({block:'start'}); } }}>
+          Saltar al contenido
+        </a>
         <Header route={route} navigate={navigate} lang={lang} setLang={setLang}/>
-        <main key={route} className="route-wrap">
+        <main id="main" key={route} className="route-wrap" tabIndex={-1}>
           <Page navigate={navigate}/>
         </main>
         <ImageFlowLayer/>

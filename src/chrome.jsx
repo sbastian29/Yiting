@@ -245,8 +245,10 @@ function NavBar({ route, navigate, lang, setLang }){
     if (g) g.set(centerRef.current, { autoAlpha:1 });
 
     if (open){
-      document.body.style.overflow = 'hidden';
-      if (window.__lenis && window.__lenis.stop) window.__lenis.stop();
+      // iOS-safe scroll lock — pins body via top:-scrollY so the address bar
+      // and rubber-band scroll can't leak through the overlay.
+      if (window.lockBodyScroll) window.lockBodyScroll();
+      else document.body.style.overflow = 'hidden';
       if (!g || reduce){
         if (g){ g.set(overlay,{autoAlpha:1}); g.set(panel,{clipPath:'inset(0 0 0% 0)',autoAlpha:1}); g.set(linkEls,{y:0,autoAlpha:1}); if(ascii)g.set(ascii,{autoAlpha:1}); if(foot)g.set(foot,{autoAlpha:1}); }
         else { overlay.style.visibility='visible'; overlay.style.opacity='1'; panel.style.clipPath='inset(0 0 0% 0)'; }
@@ -259,8 +261,8 @@ function NavBar({ route, navigate, lang, setLang }){
       if (ascii) g.fromTo(ascii, { autoAlpha:0 }, { autoAlpha:1, duration:0.3, delay:0.5 });
       if (foot)  g.fromTo(foot,  { autoAlpha:0 }, { autoAlpha:1, duration:0.25, delay:0.6 });
     } else {
-      document.body.style.overflow = '';
-      if (window.__lenis && window.__lenis.start) window.__lenis.start();
+      if (window.unlockBodyScroll) window.unlockBodyScroll();
+      else document.body.style.overflow = '';
       if (!g || reduce){
         if (g){ g.set(overlay,{autoAlpha:0}); g.set(panel,{clipPath:'inset(0 0 100% 0)'}); }
         else { overlay.style.visibility='hidden'; overlay.style.opacity='0'; panel.style.clipPath='inset(0 0 100% 0)'; }
@@ -297,12 +299,47 @@ function NavBar({ route, navigate, lang, setLang }){
     }
   }, [open]);
 
-  /* close on Escape */
+  /* close on Escape + focus trap + focus restoration
+     - Opening the menu focuses the first nav link (skip past the close button
+       so screen readers announce the actual destination first).
+     - Tab is trapped within the panel while open.
+     - On close, focus returns to the menu toggle so keyboard users don't get
+       dumped at the top of the document. */
+  const returnFocusRef = useRef(null);
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === 'Escape'){ pendingRoute.current = null; setOpen(false); } };
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    returnFocusRef.current = document.activeElement;
+    // defer focus so the panel open animation doesn't fight the scroll-into-view
+    const t = setTimeout(() => {
+      const first = panel.querySelector('.nav-item, button, a');
+      if (first && first.focus) first.focus({ preventScroll: true });
+    }, 320);
+
+    const getFocusable = () => Array.from(panel.querySelectorAll(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(el => el.offsetParent !== null);
+
+    const onKey = (e) => {
+      if (e.key === 'Escape'){ pendingRoute.current = null; setOpen(false); return; }
+      if (e.key !== 'Tab') return;
+      const nodes = getFocusable();
+      if (!nodes.length) return;
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { clearTimeout(t); window.removeEventListener('keydown', onKey); };
+  }, [open]);
+
+  useEffect(() => {
+    if (open) return;
+    const el = returnFocusRef.current;
+    if (el && el.focus && document.contains(el)) el.focus({ preventScroll: true });
+    returnFocusRef.current = null;
   }, [open]);
 
   const cerrar = () => setOpen(false);
@@ -331,7 +368,8 @@ function NavBar({ route, navigate, lang, setLang }){
            onClick={() => { pendingRoute.current = null; cerrar(); }} aria-hidden="true"></div>
 
       {/* drop-down panel (emerges from beneath the floating bar) */}
-      <div className="nav-fl-panel" ref={panelRef} aria-hidden={!open}>
+      <div className="nav-fl-panel" id="nav-panel" role="dialog" aria-modal={open}
+           ref={panelRef} aria-hidden={!open}>
         <nav className="nav-fl-links">
           {items.map((r,i) => (
             <a key={r} href={'#'+r} data-cursor="hover"
@@ -366,16 +404,18 @@ function NavBar({ route, navigate, lang, setLang }){
         </div>
       </div>
 
-      {/* floating pill bar — the whole bar (except the logo) toggles the menu */}
-      <header className={'nav-bar'+(open?' open':'')} onClick={toggleMenu}>
+      {/* floating pill bar — only the menu button toggles now (bar-wide onClick
+          fired on incidental taps while trying to scroll on mobile). */}
+      <header className={'nav-bar'+(open?' open':'')}>
         <a className="nav-bar-logo logo-mark" data-cursor="hover" onClick={onLogo} href="#home">
           <span className="lm-box">YT</span>
           <span>LISA</span>
         </a>
         <div className="nav-bar-center" ref={centerRef} aria-hidden="true">{centerText}</div>
         <button className={'nav-bar-menu'+(open?' is-open':'')} data-cursor="hover"
-                aria-expanded={open} aria-label={open?closeWord:menuWord}
-                onClick={(e)=>{ e.stopPropagation(); toggleMenu(); }}>
+                aria-expanded={open} aria-controls="nav-panel"
+                aria-label={open?closeWord:menuWord}
+                onClick={toggleMenu}>
           <MenuIcon/>
         </button>
       </header>

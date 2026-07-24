@@ -84,9 +84,10 @@ function ContactForm(){
   const flat = vp.reduceMotion;
   const cardRef = useTilt(tiltEnabled);
 
-  const [form, setForm]     = useState({ name:'', email:'', type:'modeling', message:'' });
-  const [errors, setErrors] = useState({});
-  const [sent, setSent]     = useState(false);
+  const [form, setForm]         = useState({ name:'', email:'', type:'modeling', message:'' });
+  const [errors, setErrors]     = useState({});
+  const [sent, setSent]         = useState(false);
+  const [submitting, setSubmit] = useState(false);
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const TYPES = [
@@ -108,16 +109,21 @@ function ContactForm(){
 
   const onSubmit = (e)=>{
     e.preventDefault();
+    if (submitting) return;
     const er = validate();
     setErrors(er);
     if (Object.keys(er).length) return;
     // TODO: wire real submission (mailto/Formspree/EmailJS — decided later)
-    // This is a client-side-only placeholder: no network call is made.
-    setSent(true);
-    toast(tx('✓ Mensaje enviado · te respondo en ~24h','✓ Message sent · I reply in ~24h','✓ 消息已发送 · 我会在约 24 小时内回复'));
+    // Placeholder: brief pending state so the button + aria-busy reflect activity.
+    setSubmit(true);
+    setTimeout(() => {
+      setSubmit(false);
+      setSent(true);
+      toast(tx('✓ Mensaje enviado · te respondo en ~24h','✓ Message sent · I reply in ~24h','✓ 消息已发送 · 我会在约 24 小时内回复'));
+    }, 700);
   };
 
-  const reset = ()=>{ setForm({ name:'', email:'', type:'modeling', message:'' }); setErrors({}); setSent(false); };
+  const reset = ()=>{ setForm({ name:'', email:'', type:'modeling', message:'' }); setErrors({}); setSent(false); setSubmit(false); };
 
   return (
     <div className={'cf-stage'+(flat?' flat':'')}>
@@ -132,7 +138,8 @@ function ContactForm(){
             <label className={'cf-field'+(errors.name?' err':'')} htmlFor="cf-name">
               <span className="cf-label">{tx('Nombre','Name','姓名')}</span>
               <input id="cf-name" className="cf-input" data-cursor="text" type="text"
-                     value={form.name} onChange={set('name')}
+                     value={form.name} onChange={set('name')} inputMode="text"
+                     autoCapitalize="words" enterKeyHint="next"
                      placeholder={tx('Tu nombre','Your name','你的名字')} autoComplete="name"/>
               {errors.name && <span className="cf-error">{errors.name}</span>}
             </label>
@@ -140,7 +147,8 @@ function ContactForm(){
             <label className={'cf-field'+(errors.email?' err':'')} htmlFor="cf-email">
               <span className="cf-label">{tx('Email','Email','邮箱')}</span>
               <input id="cf-email" className="cf-input" data-cursor="text" type="email"
-                     value={form.email} onChange={set('email')}
+                     value={form.email} onChange={set('email')} inputMode="email"
+                     autoCapitalize="off" autoCorrect="off" spellCheck={false} enterKeyHint="next"
                      placeholder="you@studio.com" autoComplete="email"/>
               {errors.email && <span className="cf-error">{errors.email}</span>}
             </label>
@@ -160,13 +168,18 @@ function ContactForm(){
             <span className="cf-label">{tx('Mensaje','Message','留言')}</span>
             <textarea id="cf-msg" className="cf-input" data-cursor="text" data-lenis-prevent
                       value={form.message} onChange={set('message')} rows={4}
+                      autoCapitalize="sentences" spellCheck enterKeyHint="send"
                       placeholder={tx('Cuéntame en qué estás trabajando…','Tell me what you\u2019re working on…','告诉我你在做什么…')}></textarea>
             {errors.message && <span className="cf-error">{errors.message}</span>}
           </label>
 
           <div className="cf-submit">
-            <button type="submit" className="cf-btn" data-cursor="hover">
-              {tx('Enviar mensaje','Send message','发送消息')} <span aria-hidden="true">→</span>
+            <button type="submit" className={'cf-btn'+(submitting?' is-loading':'')}
+                    data-cursor="hover"
+                    disabled={submitting} aria-busy={submitting}>
+              {submitting
+                ? tx('Enviando…','Sending…','发送中…')
+                : (<React.Fragment>{tx('Enviar mensaje','Send message','发送消息')} <span aria-hidden="true">→</span></React.Fragment>)}
             </button>
           </div>
         </form>

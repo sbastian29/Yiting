@@ -1033,9 +1033,9 @@
   transform:translateZ(26px); transition:transform .4s var(--ease-out); }
 .cf-field:focus-within { transform:translateZ(48px); }
 .cf-label { font-family:var(--f-mono); font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mid); }
-.cf-input, .cf-select { width:100%; font-family:var(--f-body); font-size:15px; color:var(--text);
+.cf-input, .cf-select { width:100%; font-family:var(--f-body); font-size:16px; color:var(--text);
   background-color:rgba(6,6,8,0.6); border:1px solid var(--border); border-radius:9px;
-  padding:12px 14px; outline:none;
+  padding:14px 14px; outline:none; min-height:48px;
   box-shadow:0 10px 24px -14px rgba(0,0,0,0.9);
   transition:border-color .25s, box-shadow .25s, background-color .25s; }
 .cf-input::placeholder { color:var(--text-dim); }
@@ -1380,17 +1380,22 @@ textarea.cf-input { resize:vertical; min-height:120px; line-height:1.6; }
 .nav-lang-btn {
   background: none; border: none; cursor: pointer;
   font: 11px var(--f-mono); color: var(--text-dim);
-  padding: 2px 2px; transition: color .2s var(--ease-out);
+  padding: 12px 14px; min-height: 44px; min-width: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  touch-action: manipulation;
+  transition: color .2s var(--ease-out);
 }
 .nav-lang-btn:hover { color: var(--text-mid); }
 .nav-lang-btn.active { color: var(--page-accent); }
 .nav-lang-sep { font: 11px var(--f-mono); color: var(--text-dim); }
 .nav-copy { font: 11px var(--f-mono); color: var(--text-dim); letter-spacing: 0.04em; }
 
-@media (max-width: 760px) {
+@media (max-width: 767.98px) {
   .nav-bar, .nav-fl-panel { width: calc(100% - 32px); border-radius: 10px; }
   .nav-link-index { display: none; }
   .nav-link-name { font-size: 24px; }
+  .nav-fl-overlay { overscroll-behavior: contain; touch-action: none; }
+  .nav-fl-panel { overscroll-behavior: contain; }
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-bar-menu, .nav-link-name, .nav-chevron { transition: none; }
@@ -1414,14 +1419,15 @@ textarea.cf-input { resize:vertical; min-height:120px; line-height:1.6; }
   height: 200px !important;
   display: block;
 }
-@media (max-width: 760px) {
+@media (max-width: 767.98px) {
   .nav-canvas-wrapper { height: 140px; }
   .nav-canvas-wrapper canvas { height: 140px !important; }
 }
 
-/* ---- whole bar is a menu trigger; logo stays its own click target ---- */
-.nav-bar { cursor: pointer; }
+/* ---- Only the menu button toggles the menu now; body of the bar is passive.
+   Accidental toggles on tap-anywhere were reported on mobile. ---- */
 .nav-bar-center { user-select: none; }
+.nav-bar-menu { min-width: 44px; min-height: 44px; }
 
 /* === CURSOR ABOUT ============================================== */
 /* Living cloud + trail is drawn on a fullscreen <canvas> (#cursor-about-canvas)
