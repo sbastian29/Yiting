@@ -11,8 +11,13 @@ function HomeParticleField(){
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Touch devices get a lighter field to save CPU + battery. DPR is capped
+    // so mid-tier mobile GPUs don't push twice the fillrate for negligible gain.
+    const isTouch = window.isTouchDevice ? window.isTouchDevice() : false;
+    const DPR = Math.min(window.devicePixelRatio || 1, isTouch ? 1.5 : 2);
+
     let W=0, H=0;
-    let N = window.innerWidth < 760 ? 2600 : 5200;
+    let N = isTouch ? 1800 : (window.innerWidth < 760 ? 2600 : 5200);
     const pos = new Float32Array(N*2);   // ndc [-1,1]
     const vel = new Float32Array(N*2);
     const seed = new Float32Array(N);
@@ -30,11 +35,39 @@ function HomeParticleField(){
     const readAccent=()=>{ const c=getComputedStyle(document.documentElement).getPropertyValue('--page-accent').trim(); if(c) accent=c; };
     readAccent(); const accInt=setInterval(readAccent,700);
 
-    const resize=()=>{ W=canvas.width=innerWidth; H=canvas.height=innerHeight; };
+    // Backing store follows DPR; CSS size fills viewport. Transform maps ndc → CSS px.
+    const resize=()=>{
+      W = innerWidth; H = innerHeight;
+      canvas.width  = Math.max(2, Math.round(W * DPR));
+      canvas.height = Math.max(2, Math.round(H * DPR));
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    };
     resize(); window.addEventListener('resize',resize);
 
-    let raf, frame=0;
+    // Pause rAF when the hero leaves the viewport OR the tab is hidden — the
+    // particle river is decorative and drains battery when unseen.
+    let raf=0, frame=0, active=true, visible=true;
+    const isRunning = () => active && visible;
+    const io = new IntersectionObserver(([e]) => {
+      active = e.isIntersecting;
+      if (isRunning() && !raf) raf = requestAnimationFrame(step);
+    }, { threshold: 0 });
+    // Observe the hero, not the fixed canvas (canvas is always in-viewport).
+    const heroObs = () => {
+      const hero = document.querySelector('.home-hero, .home-journey');
+      if (hero) io.observe(hero);
+    };
+    heroObs();
+    const onVis = () => {
+      visible = !document.hidden;
+      if (isRunning() && !raf) raf = requestAnimationFrame(step);
+    };
+    document.addEventListener('visibilitychange', onVis);
+
     const step=()=>{
+      if (!isRunning()) { raf = 0; return; }
       raf=requestAnimationFrame(step);
       frame++;
       const sv=(window.__scrollVel||0);
@@ -68,15 +101,24 @@ function HomeParticleField(){
       ctx.globalAlpha=1;
     };
     raf=requestAnimationFrame(step);
-    return ()=>{ cancelAnimationFrame(raf); clearInterval(accInt); window.removeEventListener('resize',resize); };
+    return ()=>{
+      if (raf) cancelAnimationFrame(raf);
+      clearInterval(accInt);
+      window.removeEventListener('resize',resize);
+      document.removeEventListener('visibilitychange', onVis);
+      io.disconnect();
+    };
   },[]);
   return <canvas ref={ref} className="home-canvas"></canvas>;
 }
 
-/* connector line: cursor -> nearest anchor (layer 4) */
+/* connector line: cursor -> nearest anchor (layer 4)
+   Skipped on touch — Mouse.x/y stays at (0,0) on coarse pointers so the line
+   would live glued to the top-left corner as a fantasma. */
 function HomeConnectors(){
   const ref=useRef(null);
   useEffect(()=>{
+    if (window.isTouchDevice && window.isTouchDevice()) return;
     const svg=ref.current; const line=svg.querySelector('line');
     let raf, life=0;
     const anchors=()=>Array.from(document.querySelectorAll('[data-force-anchor]')).map(el=>{const r=el.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};});
@@ -144,6 +186,12 @@ function Home({ navigate }){
   const tagWords=[t('home.tagline1'),t('home.tagline2')];
   const wordsFlat=(tagWords[0]+' ||| '+tagWords[1]).split(' ');
 
+  // Reveal translation scales with viewport so long words don't shove past
+  // the right edge on 375–430px screens.
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1440;
+  const revealDX = Math.min(70, Math.max(16, vw * 0.05));
+  const featDX = Math.min(120, Math.max(28, vw * 0.14));
+
   return (
     <div className="page home" ref={fxRef}>
       <HomeParticleField/>
@@ -175,7 +223,7 @@ function Home({ navigate }){
                   if(w==='|||') return <br key={i}/>;
                   const reveal=clampLocal(en[0], i*0.05, i*0.05+0.5);
                   const isAccent = i>=tagWords[0].split(' ').length;
-                  return <span key={i} className={'tw'+(isAccent?' accentw':'')} style={{transform:`translateX(${(1-reveal)*70}px)`,opacity:reveal,marginRight:'0.25em'}}>{w}</span>;
+                  return <span key={i} className={'tw'+(isAccent?' accentw':'')} style={{transform:`translateX(${(1-reveal)*revealDX}px)`,opacity:reveal,marginRight:'0.25em'}}>{w}</span>;
                 })}
               </p>
               <p className="tagline-foot" style={{opacity:clampLocal(en[0],0.5,1)}}>— {t('home.taglinefoot')}</p>
@@ -202,7 +250,7 @@ function Home({ navigate }){
                 {[['VITRUM','3D Texture · Weapons','🥇 1º UCM',-1],['Elemental Odyssey','Modeler · Lighting','🥇 1º HackJam',1]].map(([title,role,tag,dir],i)=>{
                   const lp=clampLocal(en[2],0.1,0.7);
                   return <a className="feat-card" key={i} data-cursor="project" onClick={(e)=>{e.preventDefault();navigate('work');}} href="#work"
-                    style={{transform:`translateX(${(1-lp)*dir*120}px)`,opacity:0.2+lp*0.8}}>
+                    style={{transform:`translateX(${(1-lp)*dir*featDX}px)`,opacity:0.2+lp*0.8}}>
                     <div className="ph" data-label={'render · '+title}></div>
                     <div className="feat-meta"><div><div className="feat-title">{title}</div><div style={{color:'var(--text-mid)',fontSize:13,marginTop:4}}>{role}</div></div><div className="feat-tag">{tag}</div></div>
                   </a>;

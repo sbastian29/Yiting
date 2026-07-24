@@ -36,19 +36,19 @@
 .hero-name.glitching .gl::after  { content:attr(data-c); position:absolute; left:0; top:0; color:var(--warm); clip-path:polygon(0 58%,100% 58%,100% 90%,0 90%); transform:translateX(3px); }
 .hero-role { margin-top:30px; display:flex; flex-direction:column; gap:6px; }
 .hero-role .role-main { font-family:var(--f-body); font-weight:300; font-size:clamp(16px,2vw,22px); color:var(--text); letter-spacing:0.01em; }
-.hero-role .role-sub { font-family:var(--f-mono); font-size:12px; letter-spacing:0.08em; color:var(--text-mid); }
+.hero-role .role-sub { font-family:var(--f-mono); font-size:clamp(12.5px,1.2vw,13.5px); letter-spacing:0.08em; color:var(--text-mid); }
 .hero-role .shimmer.active { animation:shimmer 0.6s var(--ease-out); }
 @keyframes shimmer { 50% { color:var(--page-accent); text-shadow:0 0 14px var(--page-glow); } }
 
-.scroll-hint { position:absolute; bottom:34px; left:clamp(20px,6vw,110px); display:flex; align-items:center; gap:12px;
-  font-family:var(--f-mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-mid); }
+.scroll-hint { position:absolute; bottom:calc(34px + env(safe-area-inset-bottom, 0px)); left:clamp(20px,6vw,110px); display:flex; align-items:center; gap:12px;
+  font-family:var(--f-mono); font-size:12px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-mid); }
 .scroll-hint .sh-line { width:46px; height:1px; background:var(--text-dim); position:relative; overflow:hidden; }
 .scroll-hint .sh-line::after { content:""; position:absolute; inset:0; background:var(--page-accent); animation:shSweep 2.4s var(--ease-out) infinite; }
 @keyframes shSweep { 0%{transform:translateX(-100%);} 60%,100%{transform:translateX(100%);} }
 
 /* journey (pinned) */
 .home-journey { position:relative; z-index:2; }
-.home-stage { position:sticky; top:0; height:100dvh; display:grid; place-items:center; overflow:hidden; }
+.home-stage { position:sticky; top:0; height:100dvh; display:grid; place-items:center; overflow:hidden; overflow-x:clip; }
 .stage-inner { position:relative; width:100%; max-width:1200px; padding:0 clamp(20px,6vw,80px); }
 
 /* act 1 — tagline */
@@ -56,15 +56,15 @@
   font-size:clamp(40px,8vw,118px); color:var(--text); }
 .tagline .tw { display:inline-block; }
 .tagline .accentw { color:var(--page-accent); }
-.tagline-foot { font-family:var(--f-mono); font-size:clamp(11px,1.3vw,14px); letter-spacing:0.16em; text-transform:uppercase; color:var(--text-mid); margin-top:26px; }
+.tagline-foot { font-family:var(--f-mono); font-size:clamp(12px,1.3vw,14px); letter-spacing:0.16em; text-transform:uppercase; color:var(--text-mid); margin-top:26px; }
 
 /* act 2 — stats */
 .home-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(16px,3vw,48px); width:100%; }
 .stat-cell { display:flex; flex-direction:column; gap:8px; }
 .stat-num { font-family:var(--f-head); font-weight:800; font-size:clamp(40px,6vw,80px); line-height:1; color:var(--text); }
 .stat-num em { color:var(--page-accent); font-style:normal; }
-.stat-label { font-family:var(--f-mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); }
-@media (max-width:760px){ .home-stats{ grid-template-columns:repeat(2,1fr);} }
+.stat-label { font-family:var(--f-mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); }
+@media (max-width:767.98px){ .home-stats{ grid-template-columns:repeat(2,1fr); gap:clamp(20px,6vw,32px);} }
 
 /* act 3 — featured cards */
 .home-feat { display:grid; grid-template-columns:1fr 1fr; gap:clamp(20px,4vw,60px); width:100%; align-items:center; }
@@ -72,8 +72,8 @@
 .feat-card .ph { aspect-ratio:4/3; border-radius:4px; }
 .feat-meta { display:flex; justify-content:space-between; align-items:baseline; margin-top:16px; }
 .feat-title { font-family:var(--f-head); font-weight:700; font-size:clamp(20px,2.4vw,30px); }
-.feat-tag { font-family:var(--f-mono); font-size:11px; color:var(--page-accent); letter-spacing:0.06em; }
-@media (max-width:760px){ .home-feat{ grid-template-columns:1fr;} }
+.feat-tag { font-family:var(--f-mono); font-size:12px; color:var(--page-accent); letter-spacing:0.06em; }
+@media (max-width:767.98px){ .home-feat{ grid-template-columns:1fr;} }
 
 /* act 4 — CTA */
 .home-cta { display:flex; flex-direction:column; align-items:center; gap:26px; text-align:center; }
@@ -87,7 +87,7 @@
 .act-rail { position:fixed; right:26px; top:50%; transform:translateY(-50%); z-index:30; display:flex; flex-direction:column; gap:12px; }
 .act-rail i { width:6px; height:6px; border-radius:50%; background:var(--text-dim); transition:all .4s var(--ease-out); }
 .act-rail i.on { background:var(--page-accent); height:20px; border-radius:4px; }
-@media (max-width:760px){ .act-rail{ display:none; } }
+@media (max-width:767.98px){ .act-rail{ display:none; } }
 
 /* ===================================================================
    WORK — la órbita
@@ -1486,9 +1486,14 @@ body.in-work .cursor-trail { opacity: 0 !important; }
   height: min(440px, 66vw);
   margin: 40px auto 0;
 }
-@media (max-width: 760px) {
-  .img-slot-home  { width: 130px; height: 168px; top: 80px; right: 18px; }
+@media (max-width: 767.98px) {
+  .img-slot-home  { width: 108px; height: 138px; top: 76px; right: 16px; }
   .img-slot-about { width: min(260px, 72vw); height: min(340px, 96vw); }
+}
+/* On very small screens the portrait competes with the H1 — hide it. The
+   tagline + role text carry the hero alone here. */
+@media (max-width: 430px) {
+  .img-slot-home { display: none; }
 }
 
 /* ===================================================================
