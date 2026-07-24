@@ -32,6 +32,54 @@ const hoverCapable = () => {
   catch (e) { return true; }
 };
 
+/* ---- body scroll lock, ref-counted so nested lockers don't clobber
+   each other (modal open while nav is also open, etc.) ---- */
+let _lockCount = 0;
+function lockBody() {
+  if (_lockCount === 0) document.body.style.overflow = 'hidden';
+  _lockCount++;
+}
+function unlockBody() {
+  _lockCount = Math.max(0, _lockCount - 1);
+  if (_lockCount === 0) document.body.style.overflow = '';
+}
+
+/* ---- single global Escape listener + per-layer stack, so stacked
+   overlays (modal over nav) only close the topmost one per press ---- */
+const _escStack = [];
+function pushEsc(fn) {
+  _escStack.push(fn);
+  return () => {
+    const i = _escStack.indexOf(fn);
+    if (i >= 0) _escStack.splice(i, 1);
+  };
+}
+if (typeof window !== 'undefined' && !window.__certsEscBound) {
+  window.__certsEscBound = true;
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const top = _escStack[_escStack.length - 1];
+    if (top) { top(e); e.stopPropagation(); }
+  }, { capture: true });
+}
+
+/* ---- reactive matchMedia hook, for prefs that can change post-mount
+   (OS reduced-motion toggle, mouse plugged into a touch device) ---- */
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => {
+    try { return window.matchMedia(query).matches; } catch (e) { return false; }
+  });
+  useEffect(() => {
+    let mq;
+    try { mq = window.matchMedia(query); } catch (e) { return; }
+    const on = (e) => setMatches(e.matches);
+    mq.addEventListener ? mq.addEventListener('change', on) : mq.addListener(on);
+    setMatches(mq.matches);
+    return () => { mq.removeEventListener ? mq.removeEventListener('change', on) : mq.removeListener(on); };
+  }, [query]);
+  return matches;
+}
+
 /* tiny i18n picker — mirrors the site's {es,en,zh} node shape */
 function tr(node, lang) {
   if (node == null) return '';
@@ -155,8 +203,7 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
   const [shownIdx, setShownIdx] = useState(null); // last cert shown in preview (persists during fade-out)
   const wrapRef = useRef(null);                   // tall outer that provides scroll distance
   const viewportRef = useRef(null);               // fixed-height clipping window for tiles
-  const scrollerRef = useRef(null);               // <ul> that translates upward
-  const gridRef = useRef(null);                   // alias of scrollerRef for the reveal tween
+  const scrollerRef = useRef(null);                // <ul> that translates upward
 
   const shown = useMemo(
     () => certs.map((c, i) => ({ c, i })).filter(x => !filter || x.c.type === filter),
@@ -173,9 +220,9 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
 
   /* Clip-path skew + fade reveal on filter change / mount. Runs against the tiles
      currently in the DOM — pure in-place re-render, no route change. */
-  React.useLayoutEffect(() => {
+  useEffect(() => {
     const g = window.gsap;
-    const grid = gridRef.current;
+    const grid = scrollerRef.current;
     if (!grid) return;
     const tiles = grid.querySelectorAll('.cert-tile');
     if (!tiles.length) return;
@@ -239,24 +286,19 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
   const curtainRef = useRef(null);
   const changeFilter = useCallback((next) => {
     if (next === filter) return;
+    setFilter(next); // apply immediately — curtain below is purely decorative
     const g = window.gsap;
     const el = curtainRef.current;
-    if (!g || !el || prefersReduce()) { setFilter(next); return; }
+    if (!g || !el || prefersReduce()) return;
     const tint = next ? (TYPE_COLOR_HEX[next] || PAGE_ACCENT_HEX) : PAGE_ACCENT_HEX;
     // 90/10 mix rendered as two stacked layers via a CSS variable
     el.style.setProperty('--curtain-tint', tint);
     g.killTweensOf(el);
-    g.set(el, { yPercent: 100, autoAlpha: 1 });
-    g.to(el, {
-      yPercent: 0, duration: 0.45, ease: 'power3.inOut',
-      onComplete: () => {
-        setFilter(next);
-        g.to(el, {
-          yPercent: -100, duration: 0.5, ease: 'power3.inOut', delay: 0.08,
-          onComplete: () => g.set(el, { autoAlpha: 0, yPercent: 100 }),
-        });
-      },
-    });
+    const tl = g.timeline();
+    tl.set(el, { yPercent: 100, autoAlpha: 1 })
+      .to(el, { yPercent: 0, duration: 0.28, ease: 'power3.inOut' })
+      .to(el, { yPercent: -100, duration: 0.32, ease: 'power3.inOut' }, '+=0.05')
+      .set(el, { autoAlpha: 0, yPercent: 100 });
   }, [filter, setFilter]);
 
   const filterPills = (
@@ -295,7 +337,7 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
         <div className="certs-tile-viewport" ref={viewportRef}>
           <ul
             className={'certs-tilegrid' + (hovered !== null ? ' is-hovering' : '')}
-            ref={(el) => { scrollerRef.current = el; gridRef.current = el; }}
+            ref={scrollerRef}
           >
             {items.map(({ c, i }, pos) => {
               const isTyped = TYPED.has(c.type);
@@ -309,12 +351,12 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
                     onMouseEnter={() => hoverEnabled && setHovered(i)}
                     onFocus={() => hoverEnabled && setHovered(i)}
                     onBlur={() => hoverEnabled && setHovered(null)}
-                    onClick={() => onOpen(i)}
+                    onClick={() => onOpen(pos)}
                   >
                     <span className="cert-tile-panel">
                       <Badge cert={c} wrapClass="cert-tile-badge" note={typeLabel(c.type, lang)} />
                     </span>
-                    <span className="cert-tile-num">{String(pos + 1).padStart(2, '0')}</span>
+                    <span className="cert-tile-num">{String(i + 1).padStart(2, '0')}</span>
                     {isTyped && (
                       <span className="cert-tile-chip" aria-hidden="true">
                         <TypeIcon type={c.type} />
@@ -406,12 +448,22 @@ function RailLegend({ lang }) {
    ESC or backdrop click closes; ← / → step between certifications.
    Renders into document.body via a fixed overlay — no portal needed since
    nothing above it in the tree constrains its stacking context. */
-function CertModal({ certs, lang, index, onClose, onNav }) {
+function CertModal({ certs, lang, index, onClose, onNav, filter }) {
   const overlayRef = useRef(null);
   const cardRef = useRef(null);
-  const c = certs[index];
 
-  // enter animation on mount / index change
+  // visible subset (respects the active grid filter) + absolute index per
+  // item, so nav arrows stay within the filtered set while codeFor() keeps
+  // showing each cert's canonical (unfiltered) identity.
+  const visibleCerts = useMemo(
+    () => certs.map((c, i) => ({ c, i })).filter(x => !filter || x.c.type === filter),
+    [certs, filter]
+  );
+  const item = visibleCerts[index] || visibleCerts[0];
+  const c = item.c;
+  const absIndex = item.i;
+
+  // mount-only entrance tween — runs once, not on every prev/next
   useEffect(() => {
     const g = window.gsap;
     const o = overlayRef.current, card = cardRef.current;
@@ -422,31 +474,54 @@ function CertModal({ certs, lang, index, onClose, onNav }) {
       card.style.transform = 'none';
       return;
     }
-    g.killTweensOf([o, card]);
-    g.fromTo(o, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, ease: 'power2.out' });
-    g.fromTo(card,
-      { autoAlpha: 0, y: 24, scale: 0.98 },
-      { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: 'power3.out' }
-    );
-  }, [index]);
-
-  // body scroll lock while open
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    let safety;
+    try {
+      g.fromTo(o, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, ease: 'power2.out' });
+      g.fromTo(card,
+        { autoAlpha: 0, y: 24, scale: 0.98 },
+        { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: 'power3.out' }
+      );
+    } catch (e) {
+      o.style.opacity = '1'; card.style.opacity = '1'; card.style.transform = 'none';
+    }
+    // fallback in case the tween is killed/errors before it ever paints
+    safety = setTimeout(() => {
+      if (card && getComputedStyle(card).opacity === '0') {
+        card.style.opacity = '1';
+        card.style.transform = 'none';
+      }
+    }, 800);
+    return () => clearTimeout(safety);
   }, []);
 
-  // keyboard: Esc closes, ← / → navigate
+  // on prev/next: cross-fade only the inner media/body, not the whole card
+  useEffect(() => {
+    const g = window.gsap;
+    const card = cardRef.current;
+    if (!card || !g || prefersReduce()) return;
+    const media = card.querySelector('.cmc-media');
+    const body = card.querySelector('.cmc-body');
+    if (!media || !body) return;
+    g.fromTo([media, body], { autoAlpha: 0.4 }, { autoAlpha: 1, duration: 0.22, ease: 'power2.out' });
+  }, [index]);
+
+  // body scroll lock while open (ref-counted — safe alongside nav lock)
+  useEffect(() => {
+    lockBody();
+    return () => unlockBody();
+  }, []);
+
+  // Escape via the shared stack (only the topmost overlay closes);
+  // ← / → stay as their own listener since they're not ESC.
+  useEffect(() => pushEsc(onClose), [onClose]);
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
-      else if (e.key === 'ArrowRight') onNav((index + 1) % certs.length);
-      else if (e.key === 'ArrowLeft') onNav((index - 1 + certs.length) % certs.length);
+      if (e.key === 'ArrowRight') onNav((index + 1) % visibleCerts.length);
+      else if (e.key === 'ArrowLeft') onNav((index - 1 + visibleCerts.length) % visibleCerts.length);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [index, certs.length, onClose, onNav]);
+  }, [index, visibleCerts.length, onNav]);
 
   const isTyped = TYPED.has(c.type);
 
@@ -462,16 +537,16 @@ function CertModal({ certs, lang, index, onClose, onNav }) {
       </button>
 
       <button type="button" className="cert-modal-nav prev"
-              onClick={() => onNav((index - 1 + certs.length) % certs.length)}
+              onClick={() => onNav((index - 1 + visibleCerts.length) % visibleCerts.length)}
               aria-label="Previous">‹</button>
       <button type="button" className="cert-modal-nav next"
-              onClick={() => onNav((index + 1) % certs.length)}
+              onClick={() => onNav((index + 1) % visibleCerts.length)}
               aria-label="Next">›</button>
 
       <div className="cert-modal-card" ref={cardRef}>
         <div className="cmc-media">
           <Badge cert={c} wrapClass="cmc-badge" note={typeLabel(c.type, lang)} />
-          <div className="cmc-code">{codeFor(index)}</div>
+          <div className="cmc-code">{codeFor(absIndex)}</div>
         </div>
 
         <div className="cmc-body">
@@ -506,7 +581,7 @@ function CertModal({ certs, lang, index, onClose, onNav }) {
           )}
 
           <div className="cmc-counter">
-            {String(index + 1).padStart(2, '0')} / {String(certs.length).padStart(2, '0')}
+            {String(index + 1).padStart(2, '0')} / {String(visibleCerts.length).padStart(2, '0')}
           </div>
         </div>
       </div>
@@ -620,7 +695,7 @@ function CertsNav({ lang, setLang }) {
     }
 
     if (open) {
-      document.body.style.overflow = 'hidden';
+      lockBody();
       if (!g || reduce) {
         if (g) { g.set(overlay, { autoAlpha: 1 }); g.set(panel, { clipPath: 'inset(0 0 0% 0)' }); g.set(linkEls, { y: 0, autoAlpha: 1 }); if (gallery) g.set(gallery, { autoAlpha: 1 }); if (foot) g.set(foot, { autoAlpha: 1 }); }
         return;
@@ -632,7 +707,7 @@ function CertsNav({ lang, setLang }) {
       if (gallery) g.fromTo(gallery, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, delay: 0.5 });
       if (foot)    g.fromTo(foot,    { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, delay: 0.65 });
     } else {
-      document.body.style.overflow = '';
+      unlockBody();
       if (!g || reduce) {
         if (g) { g.set(overlay, { autoAlpha: 0 }); g.set(panel, { clipPath: 'inset(0 0 100% 0)' }); }
         return;
@@ -666,12 +741,10 @@ function CertsNav({ lang, setLang }) {
     }
   }, [open]);
 
-  // close on Escape
+  // close on Escape (shared stack — yields to a modal open above it)
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return pushEsc(() => setOpen(false));
   }, [open]);
 
   const hoverIn = (e) => {
@@ -742,21 +815,6 @@ function CertsNav({ lang, setLang }) {
   );
 }
 
-/* Mosaic cell with graceful fallback — the JSON references badge
-   files that may not exist on disk; render a medal glyph instead of
-   a broken-image icon when the fetch fails. */
-function MosaicCell({ cert }) {
-  const [err, setErr] = useState(false);
-  const showImg = cert && cert.badge && !err;
-  return (
-    <div className="clm-cell">
-      {showImg
-        ? <img src={cert.badge} alt="" draggable="false" onError={() => setErr(true)} />
-        : <span className="clm-medal">{(cert && cert.medal) || '★'}</span>}
-    </div>
-  );
-}
-
 /* =================================================================
    CertsLoader — standalone initial loader.
    Counter 0→100 over ~2.2s, mosaic of badge images faded low behind
@@ -769,16 +827,18 @@ function CertsLoader({ certs, onDone }) {
   const rootRef = useRef(null);
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
+    lockBody();
+    let unlocked = false;
+    const unlockOnce = () => { if (!unlocked) { unlocked = true; unlockBody(); } };
     const g = window.gsap;
     const reduce = prefersReduce();
     if (!g || reduce) {
       setN(100);
       const id = requestAnimationFrame(() => {
-        document.body.style.overflow = '';
+        unlockOnce();
         if (onDone) onDone();
       });
-      return () => { cancelAnimationFrame(id); document.body.style.overflow = ''; };
+      return () => { cancelAnimationFrame(id); unlockOnce(); };
     }
     const counter = { v: 0 };
     const tw = g.to(counter, {
@@ -793,13 +853,13 @@ function CertsLoader({ certs, onDone }) {
           delay: 0.25,
           ease: 'power2.out',
           onComplete: () => {
-            document.body.style.overflow = '';
+            unlockOnce();
             if (onDone) onDone();
           },
         });
       },
     });
-    return () => { tw.kill(); document.body.style.overflow = ''; };
+    return () => { tw.kill(); unlockOnce(); };
   }, []);
 
   // Mosaic tiles: fill ~48 slots by cycling the badges that exist,
@@ -820,7 +880,7 @@ function CertsLoader({ certs, onDone }) {
     <div className="certs-loader" ref={rootRef} role="status" aria-label="Loading">
       <div className="certs-loader-mosaic" aria-hidden="true">
         {mosaicItems.map((c, i) => (
-          <MosaicCell key={i} cert={c} />
+          <Badge key={i} cert={c || {}} wrapClass="clm-cell" />
         ))}
       </div>
       <div className="certs-loader-vignette" aria-hidden="true"></div>
@@ -841,7 +901,8 @@ function CertificationsPage() {
   const [modalIdx, setModalIdx] = useState(null);   // null → grid only; number → modal open
   const [filter, setFilter] = useState(null);
   const [headIn, setHeadIn] = useState(prefersReduce());
-  const [hoverEnabled] = useState(() => hoverCapable() && !prefersReduce());
+  const hoverEnabled = useMediaQuery('(hover: hover) and (pointer: fine)')
+    && !useMediaQuery('(prefers-reduced-motion: reduce)');
 
   const types = useMemo(() => {
     const seen = [];
@@ -858,6 +919,10 @@ function CertificationsPage() {
   const openCert = useCallback((i) => setModalIdx(i), []);
   const closeCert = useCallback(() => setModalIdx(null), []);
   const navCert = useCallback((i) => setModalIdx(i), []);
+
+  // if the active filter changes while the modal is open, its stored index
+  // (a position within the filtered set) can no longer be trusted — close it.
+  useEffect(() => { setModalIdx(null); }, [filter]);
 
   if (loading) {
     return (
@@ -901,6 +966,7 @@ function CertificationsPage() {
           index={modalIdx}
           onClose={closeCert}
           onNav={navCert}
+          filter={filter}
         />
       )}
     </div>
