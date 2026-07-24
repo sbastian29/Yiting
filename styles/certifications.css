@@ -186,10 +186,13 @@
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 6%, #000 94%, transparent 100%);
           mask-image: linear-gradient(180deg, transparent 0, #000 6%, #000 94%, transparent 100%);
 }
-.certs-tile-viewport .certs-tilegrid {
-  will-change: transform;
-  transition: transform 0.05s linear;
-}
+/* FIX 5/7 (per gsap-performance SKILL): no permanent will-change and no CSS
+   transition here — the transition fought the JS-driven updates (was rAF,
+   now ScrollTrigger scrub: 0.4, which provides its own smoothing).
+   will-change is applied only while actively pinned/in-view, via the
+   .is-scrolling class toggled from ScrollTrigger's onEnter/onLeave/
+   onEnterBack/onLeaveBack callbacks in certifications.jsx. */
+.certs-tilegrid.is-scrolling { will-change: transform; }
 /* Static layout (non-pinned) keeps the grid in flow, no mask, no scroller. */
 .certs-view:not(:has(.certs-pin-wrap)) .certs-tile-viewport {
   overflow: visible;
@@ -241,8 +244,11 @@
      force-sets the resolved state. */
   clip-path: polygon(0% 100%, 100% 100%, 120% 0%, 0% 0%);
   opacity: 0;
-  will-change: clip-path, opacity;
 }
+/* FIX 5 (per gsap-performance SKILL): will-change only while the GSAP
+   fromTo clip-path/opacity reveal is actually running (toggled via
+   onStart/onComplete in Grid's filter-reveal effect), not permanently. */
+.is-animating { will-change: transform, opacity, clip-path; }
 .cert-tile-panel {
   position: absolute;
   inset: 0;

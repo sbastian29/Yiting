@@ -23,6 +23,13 @@
    =================================================================== */
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
+/* Register ScrollTrigger defensively — certifications.html loads gsap.min.js
+   then ScrollTrigger.min.js, but registration may not have run yet elsewhere.
+   gsap.registerPlugin() is idempotent so calling it again is harmless. */
+if (typeof window !== 'undefined' && window.gsap && window.ScrollTrigger) {
+  window.gsap.registerPlugin(window.ScrollTrigger);
+}
+
 const prefersReduce = () => {
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
   catch (e) { return false; }
@@ -282,6 +289,10 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
       return;
     }
     g.killTweensOf(tiles);
+    // per gsap-performance SKILL: will-change only while the tween is
+    // actually running — toggled via onStart/onComplete instead of a
+    // permanent CSS will-change (see .is-animating in certifications.css).
+    const tileList = Array.from(tiles);
     g.fromTo(tiles,
       { clipPath: 'polygon(0% 100%, 100% 100%, 120% 0%, 0% 0%)', opacity: 0 },
       {
@@ -291,37 +302,62 @@ function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
         ease: 'power3.out',
         stagger: 0.04,
         overwrite: 'auto',
+        onStart: () => tileList.forEach(t => t.classList.add('is-animating')),
+        onComplete: () => tileList.forEach(t => t.classList.remove('is-animating')),
       }
     );
   }, [filter]);
 
   /* pin + scroll-driven translate. Maps window scroll progress across the tall
      wrapper to an upward translate on the tile grid, so items slide past the
-     fixed viewport while pills / preview / counter stay put. */
+     fixed viewport while pills / preview / counter stay put.
+
+     per gsap-scrolltrigger SKILL: standalone ScrollTrigger.create() (no linked
+     tween) driving a custom onUpdate, with invalidateOnRefresh so the cached
+     overflow measurement is recomputed on resize / font-load reflow instead
+     of going stale (avoids the layout-forcing getBoundingClientRect() reads
+     that used to run on every scroll/rAF tick). pin: false because
+     .certs-pin-sticky already pins via CSS position:sticky — ST only drives
+     the scrub math to replace the manual rAF + translate3d. */
   useEffect(() => {
     if (!canPin) return;
+    const g = window.gsap;
+    const ST = window.ScrollTrigger;
+    if (!g || !ST) return; // graceful fallback: no pin, static layout still works
+    g.registerPlugin(ST);
+
     const wrap = wrapRef.current;
     const viewport = viewportRef.current;
     const scroller = scrollerRef.current;
     if (!wrap || !viewport || !scroller) return;
-    let raf = 0;
-    const paint = () => {
-      raf = 0;
-      const r = wrap.getBoundingClientRect();
-      const scrollable = Math.max(1, r.height - window.innerHeight);
-      const p = Math.max(0, Math.min(1, -r.top / scrollable));
-      const overflow = Math.max(0, scroller.scrollHeight - viewport.clientHeight);
-      scroller.style.transform = 'translate3d(0,' + (-overflow * p).toFixed(1) + 'px,0)';
-    };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(paint); };
-    paint();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
+
+    let overflow = 0;
+
+    const st = ST.create({
+      trigger: wrap,
+      start: 'top top',
+      end: 'bottom bottom',
+      pin: false,          // CSS sticky already pins; ST only drives scrub
+      scrub: 0.4,           // small smoothing — better than the old 0.05s CSS transition
+      invalidateOnRefresh: true,
+      onRefresh: () => {
+        overflow = Math.max(0, scroller.scrollHeight - viewport.clientHeight);
+      },
+      onUpdate: (self) => {
+        // per gsap-performance SKILL: gsap.set is a fast property setter,
+        // avoids the overhead of writing to .style.transform directly
+        g.set(scroller, { y: -overflow * self.progress });
+      },
+      // per gsap-performance SKILL: will-change only while actually pinned /
+      // in view — toggled via .is-scrolling (see certifications.css), not a
+      // permanent CSS declaration.
+      onEnter: () => scroller.classList.add('is-scrolling'),
+      onEnterBack: () => scroller.classList.add('is-scrolling'),
+      onLeave: () => scroller.classList.remove('is-scrolling'),
+      onLeaveBack: () => scroller.classList.remove('is-scrolling'),
+    });
+
+    return () => { st.kill(); scroller.classList.remove('is-scrolling'); };
   }, [canPin, shown.length]);
 
   const previewCert = shownIdx !== null ? certs[shownIdx] : null;
