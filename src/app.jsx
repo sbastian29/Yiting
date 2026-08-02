@@ -3,14 +3,16 @@
    =================================================================== */
 const ROUTES = ['home','work','about','play','contact'];
 
+const DEFAULT_ROUTE = 'work';
+
 function applyTokens(route){
-  const tk = PAGE_TOKENS[route] || PAGE_TOKENS.home;
+  const tk = PAGE_TOKENS[route] || PAGE_TOKENS[DEFAULT_ROUTE] || PAGE_TOKENS.home;
   document.documentElement.style.setProperty('--page-accent', tk.accent);
   document.documentElement.style.setProperty('--page-glow', tk.glow);
 }
 
 function App(){
-  const getHash = () => { const h = (location.hash||'#home').replace('#',''); return ROUTES.includes(h)?h:'home'; };
+  const getHash = () => { const h = (location.hash||('#'+DEFAULT_ROUTE)).replace('#',''); return ROUTES.includes(h)?h:DEFAULT_ROUTE; };
   const [route, setRoute] = useState(getHash());
   const [lang, setLang] = useState('es');
   const [trans, setTrans] = useState(null);   // { phase:'in'|'out', variant, x, y }
