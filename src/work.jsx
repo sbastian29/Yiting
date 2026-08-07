@@ -170,8 +170,9 @@ function OrbitalScene({ projects, onCardClick, reduceMotion, isTouch }){
       const vFov = 42 * Math.PI / 180;
       const hHalf = Math.atan(Math.tan(vFov / 2) * aspect);
       const needW = (RADIUS + CW * 0.75) / Math.tan(hHalf);
-      const needH = (RADIUS + CH * 0.9)  / Math.tan(vFov / 2);
-      baseCamZ = Math.max(9, needW, needH);
+      // ring is horizontal — vertical footprint is CH only, not RADIUS + CH
+      const needH = (CH * 0.9) / Math.tan(vFov / 2);
+      baseCamZ = Math.min(11, Math.max(9, needW, needH));
       fitScale = Math.min(1.4, baseCamZ / 9);
       camera.updateProjectionMatrix();
     };
@@ -433,6 +434,9 @@ function OrbitalScene({ projects, onCardClick, reduceMotion, isTouch }){
 
     const animate = () => {
       raf = requestAnimationFrame(animate);
+      // Preloader still up → don't burn GPU on WebGL + fly-in behind an opaque
+      // overlay. Hold introStart so the entrance actually plays on reveal.
+      if (window.__booted === false) return;
       if (introStart === null) introStart = performance.now();
       const elapsed = (performance.now() - introStart) / 1000;
       const t = elapsed;

@@ -59,6 +59,15 @@
     // fonts and full load have settled, otherwise there's no inertia at all.
     window.addEventListener('load', () => { lenis.resize(); if (window.ScrollTrigger) ScrollTrigger.refresh(); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { lenis.resize(); if (window.ScrollTrigger) ScrollTrigger.refresh(); });
+    // React mount is async (data fetch → createRoot). Poll a few frames after
+    // load isn't reliable when the landing is a heavy Three.js page — Lenis
+    // ends up clamped at scroll-limit 0 and manual getBoundingClientRect
+    // pin-listeners (see work.jsx ZigzagReveal) stall. Re-measure at the
+    // moments React content is most likely to have landed.
+    [120, 400, 900, 1800].forEach(ms => setTimeout(() => {
+      lenis.resize();
+      if (window.ScrollTrigger) ScrollTrigger.refresh();
+    }, ms));
   } else if (window.gsap && window.ScrollTrigger){
     gsap.registerPlugin(ScrollTrigger);
     // Touch: normalize scroll so pinned/scrubbed triggers survive iOS

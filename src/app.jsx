@@ -11,6 +11,11 @@ function applyTokens(route){
   document.documentElement.style.setProperty('--page-glow', tk.glow);
 }
 
+// Global boot flag read by heavy loops (e.g. work.jsx Three.js renderer) so
+// they don't burn GPU behind the preloader curtain. Flipped true when the
+// preloader hands off.
+if (typeof window.__booted === 'undefined') window.__booted = false;
+
 function App(){
   const getHash = () => { const h = (location.hash||('#'+DEFAULT_ROUTE)).replace('#',''); return ROUTES.includes(h)?h:DEFAULT_ROUTE; };
   const [route, setRoute] = useState(getHash());
@@ -65,7 +70,7 @@ function App(){
         </main>
         <ImageFlowLayer/>
         <WorldTransition tr={trans}/>
-        {!booted && <Preloader onDone={()=>setBooted(true)}/>}
+        {!booted && <Preloader onDone={()=>{ window.__booted = true; setBooted(true); if (window.__relayout) requestAnimationFrame(window.__relayout); }}/>}
       </ToastProvider>
     </LangContext.Provider>
   );
