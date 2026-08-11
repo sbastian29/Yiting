@@ -11,6 +11,12 @@ function HomeParticleField(){
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Respect prefers-reduced-motion: draw a single static frame of the field
+    // and skip the rAF loop entirely. Cheaper for low-end / AT users than a
+    // 5k-particle river that never stops.
+    const reduceMotion = (window.getViewport && window.getViewport().reduceMotion) ||
+      (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
     // Touch devices get a lighter field to save CPU + battery. DPR is capped
     // so mid-tier mobile GPUs don't push twice the fillrate for negligible gain.
     const isTouch = window.isTouchDevice ? window.isTouchDevice() : false;
@@ -45,6 +51,26 @@ function HomeParticleField(){
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     };
     resize(); window.addEventListener('resize',resize);
+
+    // Static path for reduced-motion: paint one frame, wire only resize +
+    // cleanup, skip rAF / IntersectionObserver / visibility listeners.
+    if (reduceMotion) {
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle = accent;
+      for (let i=0; i<N; i++){
+        const px=pos[i*2], py=pos[i*2+1];
+        const sx=(px*0.5+0.5)*W, sy=(1-(py*0.5+0.5))*H;
+        const sz=0.6 + seed[i]*1.8;
+        ctx.globalAlpha = seed[i]>0.45 ? (0.35+seed[i]*0.45) : 0.5;
+        ctx.fillStyle   = seed[i]>0.45 ? accent : accDim;
+        ctx.fillRect(sx, sy, sz, sz);
+      }
+      ctx.globalAlpha = 1;
+      return () => {
+        clearInterval(accInt);
+        window.removeEventListener('resize', resize);
+      };
+    }
 
     // Pause rAF when the hero leaves the viewport OR the tab is hidden — the
     // particle river is decorative and drains battery when unseen.
@@ -247,7 +273,7 @@ function Home({ navigate }){
             <div style={{position:'absolute',inset:0,display:'grid',alignContent:'center',gap:'30px',opacity:op[2],pointerEvents:act===2?'auto':'none'}}>
               <div className="eyebrow" style={{opacity:clampLocal(en[2],0,0.3)}}>{t('home.featured')}</div>
               <div className="home-feat">
-                {[['VITRUM','3D Texture · Weapons','🥇 1º UCM',-1],['Elemental Odyssey','Modeler · Lighting','🥇 1º HackJam',1]].map(([title,role,tag,dir],i)=>{
+                {[['VITRUM','3D Texture · Weapons','★ 1º UCM',-1],['Elemental Odyssey','Modeler · Lighting','★ 1º HackJam',1]].map(([title,role,tag,dir],i)=>{
                   const lp=clampLocal(en[2],0.1,0.7);
                   return <a className="feat-card" key={i} data-cursor="project" onClick={(e)=>{e.preventDefault();navigate('work');}} href="#work"
                     style={{transform:`translateX(${(1-lp)*dir*featDX}px)`,opacity:0.2+lp*0.8}}>
@@ -272,9 +298,6 @@ function Home({ navigate }){
       </section>
 
       <MarqueeMantra text="craftsmanship meets storytelling"/>
-
-      {/* act rail */}
-      <div className="act-rail">{[0,1,2,3].map(i=><i key={i} className={act===i?'on':''}></i>)}</div>
     </div>
   );
 }

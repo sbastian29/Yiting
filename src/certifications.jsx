@@ -1,57 +1,32 @@
 /* ===================================================================
-   certifications.jsx — Standalone Certifications page.
-   Self-contained: no SPA router, no external lib.jsx dependency.
+   certifications.jsx — Global Certification Archive (standalone page).
 
-   Grid layout (ScrollTrigger-driven sticky stage):
-     • Fixed-height viewport (CSS sticky) clips a tile grid. ScrollTrigger
-       translates the grid upward on page scroll, so tiles slide past
-       while filter pills/preview panel/counter stay pinned.
-     • Filter pills (TODOS + one per `type`). Clicking triggers a
-       decorative overlay wipe (90% base bg + 10% type tint) while
-       filter applies synchronously.
+   Layout (>900px):
+     [ 34% sidebar filters + heading | 1fr dual-column vertical infinite carousel | 44px vertical labels ]
+   Overlay: 62/38 grid with cert visual + metadata + description toggle.
 
    Interactions:
-     • Hover (desktop, capable device): dims all other tiles to 0.18;
-       right column shows badge + name + blurb preview. Under touch or
-       no-hover media query: tiles show name+year caption directly.
-     • Click tile: opens full-viewport modal (badge left, metadata
-       right). ESC or backdrop closes. ←/→ arrows + buttons navigate
-       within the filtered subset. Focus trap active; siblings inert.
+     • Auto-scrolling dual-track carousel (raf-driven) with wheel-accelerated velocity.
+     • Filter pills: fade-out → filter change → fade-in.
+     • Card click: opens overlay with breadcrumb code, program/emisor/año/validation
+       + collapsible description.
+     • ESC or backdrop closes overlay; body scroll locked while open.
 
-   Features:
-     • Body scroll lock, ref-counted so nested overlays (modal + nav)
-       don't interfere.
-     • Reactive matchMedia: hover capability + reduced-motion
-       re-evaluate on OS toggle.
-     • Loader: 600ms progress counter, skipped on sessionStorage flag
-       (repeat visits in same session).
-     • Fallback badges: per-type SVG icon (award/scholarship/
-       certification/recognition) in type color when image missing.
-     • Data: loaded once from data/certifications.json → window.CERTS_DATA.
+   Mobile (<=900px):
+     • Single-column stacked cards, no auto-scroll, right vertical labels hidden.
 
+   Data: fetched once from data/certifications.json → window.CERTS_DATA.
+   Nav: shared site-wide floating pill nav (mirrors chrome.jsx / other pages).
    =================================================================== */
-const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-/* Register ScrollTrigger defensively — certifications.html loads gsap.min.js
-   then ScrollTrigger.min.js, but registration may not have run yet elsewhere.
-   gsap.registerPlugin() is idempotent so calling it again is harmless. */
-if (typeof window !== 'undefined' && window.gsap && window.ScrollTrigger) {
-  window.gsap.registerPlugin(window.ScrollTrigger);
-}
+const { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } = React;
 
 const prefersReduce = () => {
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
   catch (e) { return false; }
 };
-const hoverCapable = () => {
-  try { return window.matchMedia('(hover: hover) and (pointer: fine)').matches; }
-  catch (e) { return true; }
-};
 
-/* ---- body scroll lock — delegates to the site-wide iOS-safe helper when
-   available (lib.jsx exposes lockBodyScroll/unlockBodyScroll). Falls back
-   to raw overflow toggle for the standalone certifications.html page,
-   which doesn't load lib.jsx. Both paths remain ref-counted. */
+/* ---- ref-counted body scroll lock (delegates to lib.jsx if present) ---- */
 let _lockCount = 0;
 function lockBody() {
   if (_lockCount++ === 0) {
@@ -67,8 +42,7 @@ function unlockBody() {
   }
 }
 
-/* ---- single global Escape listener + per-layer stack, so stacked
-   overlays (modal over nav) only close the topmost one per press ---- */
+/* ---- shared Escape stack: only the topmost overlay closes per keypress ---- */
 const _escStack = [];
 function pushEsc(fn) {
   _escStack.push(fn);
@@ -86,780 +60,285 @@ if (typeof window !== 'undefined' && !window.__certsEscBound) {
   }, { capture: true });
 }
 
-/* ---- reactive matchMedia hook, for prefs that can change post-mount
-   (OS reduced-motion toggle, mouse plugged into a touch device) ---- */
-function useMediaQuery(query) {
-  const [matches, setMatches] = useState(() => {
-    try { return window.matchMedia(query).matches; } catch (e) { return false; }
-  });
-  useEffect(() => {
-    let mq;
-    try { mq = window.matchMedia(query); } catch (e) { return; }
-    const on = (e) => setMatches(e.matches);
-    mq.addEventListener ? mq.addEventListener('change', on) : mq.addListener(on);
-    setMatches(mq.matches);
-    return () => { mq.removeEventListener ? mq.removeEventListener('change', on) : mq.removeListener(on); };
-  }, [query]);
-  return matches;
+/* ---- category labels (used in filter pills) ---- */
+const FILTERS = [
+  { key: 'all',            label: 'All Work' },
+  { key: 'universidad',    label: 'Universidad' },
+  { key: 'curso-online',   label: 'Curso Online' },
+  { key: 'idioma',         label: 'Idioma' },
+  { key: 'reconocimiento', label: 'Reconocimiento' },
+];
+
+/* Deterministic "code" per (issuer, index) — used in card corner + overlay breadcrumb */
+const codeFor = (cert, index) => {
+  const initials = (cert.issuer || '').split(' ')
+    .map(w => w[0]).filter(Boolean).join('').toUpperCase().slice(0, 4) || 'CERT';
+  return `CERT/${initials}_${String(index + 1).padStart(2, '0')}`;
+};
+
+/* ============================== PILL ================================== */
+/* Flip-label filter pill — two stacked spans, top translates up on hover. */
+function Pill({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      className={'arc-pill' + (active ? ' is-active' : '')}
+      aria-pressed={active}
+      onClick={onClick}
+    >
+      <span className="arc-pill-flip">
+        <span className="arc-pill-a">{children}</span>
+        <span className="arc-pill-b" aria-hidden="true">{children}</span>
+      </span>
+    </button>
+  );
 }
 
-/* ---- focus trap for modal-like overlays: saves + restores focus,
-   moves initial focus in, traps Tab within root, and inerts the
-   known page-root siblings while active ---- */
-function useFocusTrap(rootRef, isActive) {
-  const returnFocusRef = useRef(null);
+/* ============================== CARD ================================== */
+/* 4:3 tile — hatched placeholder (or image when provided) + eyebrow tag +
+   title. Corner code stamp. Data-tag drives color accent per category. */
+function ArcCard({ cert, index, onOpen }) {
+  const code = codeFor(cert, index);
+  const primaryType = (cert.types && cert.types[0]) || 'other';
+  return (
+    <button
+      type="button"
+      className="arc-card"
+      data-type={primaryType}
+      onClick={onOpen}
+      aria-label={cert.title}
+    >
+      <div className="arc-card-media">
+        {cert.imageUrl
+          ? <img className="arc-card-img" src={cert.imageUrl} alt="" draggable="false" />
+          : <span className="arc-card-ph">{cert.program}</span>}
+        <span className="arc-card-code" aria-hidden="true">{code}</span>
+      </div>
+      <div className="arc-card-body">
+        <span className="arc-card-tag">{cert.date}</span>
+        <h3 className="arc-card-title">{cert.title}</h3>
+      </div>
+    </button>
+  );
+}
+
+/* ============================== TRACK ================================= */
+/* Dual-column infinite auto-scroll carousel with wheel-accelerated velocity.
+   Base speed 0.5 px/frame, wheel adds decaying impulse (×0.94/frame).
+   Uses translate3d on the two tracks; the right track is offset by -60px so
+   the columns feel staggered.
+
+   Paused when: overlay open, mouse over carousel, viewport <= 900px, or
+   prefers-reduced-motion is on. Track height is measured via ResizeObserver
+   so the loop point stays accurate through filter changes and layout shifts.
+*/
+function ArcCarousel({ items, paused, onOpen }) {
+  const carouselRef = useRef(null);
+  const leftRef = useRef(null);
+  const rightRef = useRef(null);
+  const hoverRef = useRef(false);
+
+  // Base list must be long enough that the doubled loop looks dense —
+  // if the filtered set is tiny (1–2 items), pad it before doubling.
+  const doubled = useMemo(() => {
+    if (!items.length) return [];
+    let base = items.slice();
+    while (base.length < 6) base = base.concat(items);
+    return base.concat(base);
+  }, [items]);
+
   useEffect(() => {
-    if (!isActive) return;
-    const root = rootRef.current;
-    if (!root) return;
-    returnFocusRef.current = document.activeElement;
+    let raf = 0;
+    let yPos = 0;
+    let currentSpeed = 0.5;
+    let targetSpeed = 0.5;
+    let wheelVel = 0;
+    let trackHalfH = 0;
+    let running = true;
 
-    const raf = requestAnimationFrame(() => {
-      // Prefer the title (data-autofocus on h2.cmc-name) so screen readers
-      // announce the certificate name before "Close".
-      const first = root.querySelector('[data-autofocus], .cert-modal-close, button, [href], input, [tabindex]:not([tabindex="-1"])');
-      if (first) first.focus();
-    });
-
-    const onKey = (e) => {
-      if (e.key !== 'Tab') return;
-      const focusables = root.querySelectorAll(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      );
-      if (!focusables.length) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
-      else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+    const measure = () => {
+      if (leftRef.current) trackHalfH = leftRef.current.scrollHeight / 2;
     };
-    root.addEventListener('keydown', onKey);
+    // Wait a frame so the doubled list has laid out.
+    const measureTimer = setTimeout(measure, 60);
+    const ro = new ResizeObserver(measure);
+    if (leftRef.current) ro.observe(leftRef.current);
 
-    // inert the known page roots (not every body child — the modal itself
-    // is a fixed-position sibling of these, not a descendant of them)
-    const siblings = Array.from(document.querySelectorAll('.certs-nav, .certs-shell, .certs-curtain'));
-    const prev = siblings.map(el => ({ el, inert: el.inert, aria: el.getAttribute('aria-hidden') }));
-    siblings.forEach(el => { el.inert = true; el.setAttribute('aria-hidden', 'true'); });
+    const onWheel = (e) => {
+      if (paused || hoverRef.current) return;
+      if (window.innerWidth <= 900) return;
+      wheelVel += e.deltaY * 0.05;
+      const max = 0.5 * 10;
+      wheelVel = Math.max(-max, Math.min(max, wheelVel));
+    };
+    const onEnter = () => { hoverRef.current = true; targetSpeed = 0; };
+    const onLeave = () => { hoverRef.current = false; if (!paused) targetSpeed = 0.5; };
+    window.addEventListener('wheel', onWheel, { passive: true });
+    const el = carouselRef.current;
+    if (el) {
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mouseleave', onLeave);
+    }
+
+    // Kill velocity + freeze when overlay opens (via `paused` prop)
+    targetSpeed = paused ? 0 : 0.5;
+
+    const tick = () => {
+      if (!running) return;
+      const reduce = prefersReduce();
+      const wide = window.innerWidth > 900;
+      if (wide && !reduce && trackHalfH > 0 && !paused) {
+        currentSpeed += (targetSpeed - currentSpeed) * 0.1;
+        wheelVel *= 0.94;
+        yPos -= (currentSpeed + wheelVel);
+        if (yPos <= -trackHalfH) yPos = 0;
+        if (yPos > 0) yPos = -trackHalfH;
+        if (leftRef.current)  leftRef.current.style.transform  = `translate3d(0,${yPos}px,0)`;
+        if (rightRef.current) rightRef.current.style.transform = `translate3d(0,${yPos - 60}px,0)`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
 
     return () => {
+      running = false;
+      clearTimeout(measureTimer);
       cancelAnimationFrame(raf);
-      root.removeEventListener('keydown', onKey);
-      prev.forEach(({ el, inert, aria }) => {
-        el.inert = inert;
-        if (aria == null) el.removeAttribute('aria-hidden'); else el.setAttribute('aria-hidden', aria);
-      });
-      const rf = returnFocusRef.current;
-      if (rf && document.contains(rf) && typeof rf.focus === 'function') rf.focus();
-    };
-  }, [isActive]);
-}
-
-/* tiny i18n picker — mirrors the site's {es,en,zh} node shape */
-function tr(node, lang) {
-  if (node == null) return '';
-  if (typeof node === 'string') return node;
-  return node[lang] ?? node.en ?? '';
-}
-
-const UI = {
-  eyebrow: { es: 'Las credenciales', en: 'The credentials', zh: '资历凭证' },
-  title:   { es: 'Certificaciones', en: 'Certifications', zh: '认证' },
-  sub: {
-    es: 'Premios, becas y reconocimientos que jalonan el recorrido. Pasa el cursor sobre una pieza para ver su nombre; haz clic para entrar en detalle.',
-    en: 'Awards, scholarships and recognitions marking the journey. Hover a piece to reveal its name; click to step into detail.',
-    zh: '沿途的奖项、奖学金与荣誉。将光标悬停在卡片上可查看名称；点击进入详情。',
-  },
-  all:     { es: 'TODOS', en: 'ALL', zh: '全部' },
-  counter: { es: 'certificaciones', en: 'certifications', zh: '认证' },
-  readMore:{ es: 'Saber más', en: 'Read more', zh: '了解更多' },
-  backAll: { es: 'Volver a todas las certificaciones', en: 'Back to all certifications', zh: '返回全部认证' },
-  close:   { es: 'Cerrar', en: 'Close', zh: '关闭' },
-  others:  { es: 'Otras', en: 'Others', zh: '其他' },
-  verify:  { es: 'Verificar credencial', en: 'Verify credential', zh: '验证凭证' },
-  issuer:  { es: 'Emisor', en: 'Issuer', zh: '颁发方' },
-  date:    { es: 'Fecha', en: 'Date', zh: '日期' },
-};
-
-/* category label per `type` value */
-const TYPE_LABELS = {
-  award:         { es: 'Premio',         en: 'Award',         zh: '奖项' },
-  scholarship:   { es: 'Beca',           en: 'Scholarship',   zh: '奖学金' },
-  certification: { es: 'Certificación',  en: 'Certification', zh: '认证' },
-  recognition:   { es: 'Reconocimiento', en: 'Recognition',   zh: '荣誉' },
-};
-const typeLabel = (t, lang) => tr(TYPE_LABELS[t] || t, lang);
-
-/* Types with persistent color + icon (intentional exception to the
-   hover-only accent rule). All other types render neutral. */
-const TYPED = new Set(['award', 'scholarship']);
-
-/* Hex values mirroring the CSS custom properties on .certs-page — used
-   only for the JS-driven filter curtain, whose background needs a real
-   color value (10% tint of the type over the base bg). */
-const TYPE_COLOR_HEX = {
-  award:         '#fbbf7a',
-  scholarship:   '#c4b5fd',
-  certification: '#7dd3fc',
-  recognition:   '#94a3b8',
-};
-const PAGE_ACCENT_HEX = '#7dd3fc';
-const BG_HEX = '#060608';
-
-/* Inline SVGs — currentColor so they inherit the per-type color set
-   via CSS custom properties on the containing element. 1.5 stroke to
-   match the sitewide icon weight. */
-function TypeIcon({ type, className }) {
-  const cls = className || 'cert-type-ico';
-  if (type === 'award') {
-    return (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M7 4h10v3a5 5 0 0 1-10 0V4z"/>
-        <path d="M7 5H4v2a3 3 0 0 0 3 3"/>
-        <path d="M17 5h3v2a3 3 0 0 1-3 3"/>
-        <path d="M9 20h6"/>
-        <path d="M12 12v8"/>
-      </svg>
-    );
-  }
-  if (type === 'scholarship') {
-    return (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M2 9l10-5 10 5-10 5-10-5z"/>
-        <path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>
-        <path d="M22 9v5"/>
-      </svg>
-    );
-  }
-  if (type === 'certification') {
-    return (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="14" rx="2"/>
-        <path d="M7 9h10M7 13h6"/>
-        <path d="M15 20l2-2 2 2v-4"/>
-      </svg>
-    );
-  }
-  if (type === 'recognition') {
-    return (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M12 2l2.5 6 6.5.5-5 4.5 1.5 6.5L12 16l-5.5 3.5L8 13l-5-4.5 6.5-.5z"/>
-      </svg>
-    );
-  }
-  return null;
-}
-
-const codeFor = (i) => 'Y4/CERT_' + String(i + 1).padStart(2, '0');
-
-/* ---- badge with graceful placeholder on missing/broken image ---- */
-function Badge({ cert, wrapClass, note }) {
-  const [err, setErr] = useState(false);
-  const showImg = cert.badge && !err;
-  return (
-    <div className={wrapClass}>
-      {showImg
-        ? <img className="cert-badge-img" src={cert.badge} alt=""
-               draggable="false" onError={() => setErr(true)} />
-        : (
-          <div className="cert-badge-ph" data-type={cert.type}>
-            <TypeIcon type={cert.type} className="cbp-icon" />
-            {note && <span className="cbp-note">{note}</span>}
-          </div>
-        )}
-    </div>
-  );
-}
-
-/* ---- flip-text label: two stacked spans, top slides up on hover ---- */
-function FlipLabel({ text }) {
-  return (
-    <span className="cf-flip" aria-hidden="false">
-      <span className="cf-flip-a">{text}</span>
-      <span className="cf-flip-b" aria-hidden="true">{text}</span>
-    </span>
-  );
-}
-
-/* ================== RAIL (image-tile mosaic) + CENTER PREVIEW (State A) ==================
-   Scroll model (v3): the entire layout is pinned via sticky. The tile column is a fixed-
-   height viewport; the tile grid inside translates upward as page scroll progresses. No
-   batch pagination — every filtered item is rendered once, tiles just scroll past.
-   ============================================================================ */
-
-function Grid({ certs, lang, onOpen, filter, setFilter, types, hoverEnabled }) {
-  const [hovered, setHovered] = useState(null);   // index currently hovered
-  const [shownIdx, setShownIdx] = useState(null); // last cert shown in preview (persists during fade-out)
-  const wrapRef = useRef(null);                   // tall outer that provides scroll distance
-  const viewportRef = useRef(null);               // fixed-height clipping window for tiles
-  const scrollerRef = useRef(null);                // <ul> that translates upward
-
-  const shown = useMemo(
-    () => certs.map((c, i) => ({ c, i })).filter(x => !filter || x.c.type === filter),
-    [certs, filter]
-  );
-
-  // scroll distance grows with the number of extra rows past the visible 3
-  const rowsShown = Math.ceil(shown.length / 2);
-  const extraRows = Math.max(0, rowsShown - 3);
-  const canPin = extraRows > 0 && hoverEnabled;
-  const trackHeight = (100 + extraRows * 28) + 'vh';
-
-  useEffect(() => { if (hovered !== null) setShownIdx(hovered); }, [hovered]);
-
-  /* Clip-path skew + fade reveal on filter change / mount. Runs against the tiles
-     currently in the DOM — pure in-place re-render, no route change. */
-  useEffect(() => {
-    const g = window.gsap;
-    const grid = scrollerRef.current;
-    if (!grid) return;
-    const tiles = grid.querySelectorAll('.cert-tile');
-    if (!tiles.length) return;
-    if (!g || prefersReduce()) {
-      tiles.forEach(t => {
-        t.style.clipPath = 'polygon(0% 100%, 100% 100%, 100% 0%, 0% 0%)';
-        t.style.opacity = '1';
-      });
-      return;
-    }
-    g.killTweensOf(tiles);
-    // per gsap-performance SKILL: will-change only while the tween is
-    // actually running — toggled via onStart/onComplete instead of a
-    // permanent CSS will-change (see .is-animating in certifications.css).
-    const tileList = Array.from(tiles);
-    g.fromTo(tiles,
-      { clipPath: 'polygon(0% 100%, 100% 100%, 120% 0%, 0% 0%)', opacity: 0 },
-      {
-        clipPath: 'polygon(0% 100%, 100% 100%, 100% 0%, 0% 0%)',
-        opacity: 1,
-        duration: 0.5,
-        ease: 'power3.out',
-        stagger: 0.04,
-        overwrite: 'auto',
-        onStart: () => tileList.forEach(t => t.classList.add('is-animating')),
-        onComplete: () => tileList.forEach(t => t.classList.remove('is-animating')),
+      ro.disconnect();
+      window.removeEventListener('wheel', onWheel);
+      if (el) {
+        el.removeEventListener('mouseenter', onEnter);
+        el.removeEventListener('mouseleave', onLeave);
       }
-    );
-  }, [filter]);
+    };
+  }, [doubled.length, paused]);
 
-  /* pin + scroll-driven translate. Maps window scroll progress across the tall
-     wrapper to an upward translate on the tile grid, so items slide past the
-     fixed viewport while pills / preview / counter stay put.
-
-     per gsap-scrolltrigger SKILL: standalone ScrollTrigger.create() (no linked
-     tween) driving a custom onUpdate, with invalidateOnRefresh so the cached
-     overflow measurement is recomputed on resize / font-load reflow instead
-     of going stale (avoids the layout-forcing getBoundingClientRect() reads
-     that used to run on every scroll/rAF tick). pin: false because
-     .certs-pin-sticky already pins via CSS position:sticky — ST only drives
-     the scrub math to replace the manual rAF + translate3d. */
-  useEffect(() => {
-    if (!canPin) return;
-    const g = window.gsap;
-    const ST = window.ScrollTrigger;
-    if (!g || !ST) return; // graceful fallback: no pin, static layout still works
-    g.registerPlugin(ST);
-
-    const wrap = wrapRef.current;
-    const viewport = viewportRef.current;
-    const scroller = scrollerRef.current;
-    if (!wrap || !viewport || !scroller) return;
-
-    let overflow = 0;
-
-    const st = ST.create({
-      trigger: wrap,
-      start: 'top top',
-      end: 'bottom bottom',
-      pin: false,          // CSS sticky already pins; ST only drives scrub
-      scrub: 0.4,           // small smoothing — better than the old 0.05s CSS transition
-      invalidateOnRefresh: true,
-      onRefresh: () => {
-        overflow = Math.max(0, scroller.scrollHeight - viewport.clientHeight);
-      },
-      onUpdate: (self) => {
-        // per gsap-performance SKILL: gsap.set is a fast property setter,
-        // avoids the overhead of writing to .style.transform directly
-        g.set(scroller, { y: -overflow * self.progress });
-      },
-      // per gsap-performance SKILL: will-change only while actually pinned /
-      // in view — toggled via .is-scrolling (see certifications.css), not a
-      // permanent CSS declaration.
-      onEnter: () => scroller.classList.add('is-scrolling'),
-      onEnterBack: () => scroller.classList.add('is-scrolling'),
-      onLeave: () => scroller.classList.remove('is-scrolling'),
-      onLeaveBack: () => scroller.classList.remove('is-scrolling'),
-    });
-
-    return () => { st.kill(); scroller.classList.remove('is-scrolling'); };
-  }, [canPin, shown.length]);
-
-  const previewCert = shownIdx !== null ? certs[shownIdx] : null;
-  const previewOn = hoverEnabled && hovered !== null;
-  const items = shown;
-
-  /* Filter curtain: rises from below, 90% base + 10% type-color tint. Applies the
-     new filter mid-animation while the screen is covered, then retracts upward.
-     Under prefers-reduced-motion / no GSAP: just swap instantly. */
-  const curtainRef = useRef(null);
-  const changeFilter = useCallback((next) => {
-    if (next === filter) return;
-    setFilter(next); // apply immediately — curtain below is purely decorative
-    const g = window.gsap;
-    const el = curtainRef.current;
-    if (!g || !el || prefersReduce()) return;
-    const tint = next ? (TYPE_COLOR_HEX[next] || PAGE_ACCENT_HEX) : PAGE_ACCENT_HEX;
-    // 90/10 mix rendered as two stacked layers via a CSS variable
-    el.style.setProperty('--curtain-tint', tint);
-    g.killTweensOf(el);
-    // .is-active promotes the layer via will-change only while the tween runs.
-    // onInterrupt + final .set() guarantee cleanup even if a rapid filter
-    // change or a Safari backgrounding kills the timeline mid-flight.
-    el.classList.add('is-active');
-    const clearActive = () => { el.classList.remove('is-active'); };
-    const tl = g.timeline({ onInterrupt: clearActive, onComplete: clearActive });
-    tl.set(el, { yPercent: 100, autoAlpha: 1 })
-      .to(el, { yPercent: 0, duration: 0.22, ease: 'power3.inOut' })
-      .to(el, { yPercent: -100, duration: 0.26, ease: 'power3.inOut' }, '+=0.04')
-      .set(el, { autoAlpha: 0, yPercent: 100 });
-  }, [filter, setFilter]);
-
-  const filterPills = (
-    <div className="certs-filter" role="group" aria-label="Filter by type">
-      <button
-        type="button"
-        className={'cf-pill' + (filter === null ? ' is-active' : '')}
-        aria-pressed={filter === null}
-        onClick={() => changeFilter(null)}
-      >
-        <FlipLabel text={tr(UI.all, lang)} />
-      </button>
-      {types.map(t => (
-        <button
-          key={t}
-          type="button"
-          data-type={TYPED.has(t) ? t : undefined}
-          className={'cf-pill' + (filter === t ? ' is-active' : '')}
-          aria-pressed={filter === t}
-          onClick={() => changeFilter(filter === t ? null : t)}
-        >
-          <FlipLabel text={typeLabel(t, lang)} />
-        </button>
-      ))}
-    </div>
-  );
-
-  const railLayout = (
-    <div className="certs-rail-layout">
-      {/* left: image-only mosaic of badge tiles, inside a fixed-height viewport
-          that clips the tile grid as it translates upward on scroll. */}
-      <div
-        className="certs-tilewrap"
-        onMouseLeave={() => setHovered(null)}
-      >
-        <div className="certs-tile-viewport" ref={viewportRef}>
-          <ul
-            className={'certs-tilegrid' + (hovered !== null ? ' is-hovering' : '')}
-            ref={scrollerRef}
-            onFocus={hoverEnabled ? (e) => {
-              const btn = e.target.closest('.cert-tile');
-              if (!btn) return;
-              const idx = Number(btn.dataset.i);
-              if (!Number.isNaN(idx)) setHovered(idx);
-              // TODO(a11y-scroll-into-view): compute progress from focused tile Y and
-              // window.scrollTo instead of relying on browser auto-scroll into the mask.
-            } : undefined}
-            onBlur={hoverEnabled ? (e) => {
-              if (!e.currentTarget.contains(e.relatedTarget)) setHovered(null);
-            } : undefined}
-          >
-            {items.map(({ c, i }, pos) => {
-              const isTyped = TYPED.has(c.type);
-              return (
-                <li key={i}>
-                  <button
-                    type="button"
-                    data-type={isTyped ? c.type : undefined}
-                    data-i={i}
-                    className={'cert-tile' + (hovered === i ? ' is-active' : '')}
-                    aria-label={tr(c.name, lang)}
-                    onMouseEnter={() => hoverEnabled && setHovered(i)}
-                    onClick={() => onOpen(pos)}
-                  >
-                    <span className="cert-tile-panel">
-                      <Badge cert={c} wrapClass="cert-tile-badge" note={typeLabel(c.type, lang)} />
-                    </span>
-                    <span className="cert-tile-num">{String(i + 1).padStart(2, '0')}</span>
-                    {isTyped && (
-                      <span className="cert-tile-chip" aria-hidden="true">
-                        <TypeIcon type={c.type} />
-                      </span>
-                    )}
-                    {!hoverEnabled && (
-                      <span className="cert-tile-caption">
-                        <span className="ctc-name">{tr(c.name, lang)}</span>
-                        <span className="ctc-year">{tr(c.date, lang) || c.year}</span>
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-        <RailLegend lang={lang} />
-      </div>
-
-      {/* right: genuinely empty until a tile is hovered */}
-      <div className="certs-preview-area" aria-hidden="true">
-        <div className={'certs-preview' + (previewOn ? ' is-on' : '')}>
-          {previewCert && (
-            <React.Fragment>
-              <Badge cert={previewCert} wrapClass="certs-preview-badge"
-                     note={typeLabel(previewCert.type, lang)} />
-              <div className="certs-preview-name">{tr(previewCert.name, lang)}</div>
-              <p className="certs-preview-desc">{tr(previewCert.blurb, lang)}</p>
-            </React.Fragment>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const counter = (
-    <div className="certs-counter">
-      {tr(UI.counter, lang)} ({String(shown.length).padStart(2, '0')})
-    </div>
-  );
-
-  const curtain = <div className="certs-curtain" ref={curtainRef} aria-hidden="true"><span/></div>;
-
-  // Pinned: sticky stage that fills the viewport for the whole scroll sequence.
-  if (canPin) {
-    return (
-      <div className="certs-view" key="rail">
-        {curtain}
-        <div className="certs-pin-wrap" ref={wrapRef} style={{ height: trackHeight, position: 'relative' }}>
-          <div
-            className="certs-pin-sticky"
-            style={{ position: 'sticky', top: 0, height: '100dvh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <div className="certs-pin-pills">{filterPills}</div>
-            <div className="certs-pin-stage">{railLayout}</div>
-            <div className="certs-pin-counter">{counter}</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Static (short lists / reduced-motion / no-hover): original in-flow layout.
-  // `is-static` is the explicit JS class that iOS <15.4 (no `:has()`) uses to
-  // drop the viewport clip — see certifications.css .certs-view.is-static.
   return (
-    <div className="certs-view is-static" key="rail">
-      {curtain}
-      {filterPills}
-      {railLayout}
-      {counter}
-    </div>
+    <main className="arc-center" ref={carouselRef}>
+      <div className="arc-track arc-track-l" ref={leftRef}>
+        {doubled.map((c, i) => (
+          <ArcCard key={c.id + '-l-' + i} cert={c} index={i % Math.max(items.length, 1)}
+                   onOpen={() => onOpen(c)} />
+        ))}
+      </div>
+      <div className="arc-track arc-track-r" ref={rightRef}>
+        {doubled.map((c, i) => (
+          <ArcCard key={c.id + '-r-' + i} cert={c} index={i % Math.max(items.length, 1)}
+                   onOpen={() => onOpen(c)} />
+        ))}
+      </div>
+    </main>
   );
 }
 
-/* ---- persistent color+icon legend, lives inside the tile column ---- */
-function RailLegend({ lang }) {
-  const legendCopy = { es: 'Leyenda', en: 'Legend', zh: '图例' };
-  return (
-    <div className="certs-legend" role="note" aria-label={tr(legendCopy, lang)}>
-      <span className="certs-legend-label">{tr(legendCopy, lang)}</span>
-      <span className="certs-legend-item" data-type="award">
-        <TypeIcon type="award" className="certs-legend-ico" />
-        <span className="certs-legend-txt">{typeLabel('award', lang)}</span>
-      </span>
-      <span className="certs-legend-item" data-type="scholarship">
-        <TypeIcon type="scholarship" className="certs-legend-ico" />
-        <span className="certs-legend-txt">{typeLabel('scholarship', lang)}</span>
-      </span>
-    </div>
-  );
-}
-
-/* ==================== FULL-SCREEN MODAL (detail view) ==================== */
-/* Lightbox-style overlay: big badge on the left, all metadata on the right.
-   ESC or backdrop click closes; ← / → step between certifications.
-   Renders into document.body via a fixed overlay — no portal needed since
-   nothing above it in the tree constrains its stacking context. */
-function CertModal({ certs, lang, index, onClose, onNav, filter }) {
+/* ============================== OVERLAY =============================== */
+/* Modal with slotted metadata: PROGRAMA / EMISOR / AÑO / VALIDACIÓN +
+   description collapsible ("READ MORE" → expands to max-height). ESC or
+   backdrop closes; body scroll locked. */
+function ArcOverlay({ cert, index, onClose }) {
   const overlayRef = useRef(null);
-  const cardRef = useRef(null);
-  const backdropRef = useRef(null);
+  const [expanded, setExpanded] = useState(false);
+  const code = codeFor(cert, index);
 
-  useFocusTrap(overlayRef, true);
-
-  // visible subset (respects the active grid filter) + absolute index per
-  // item, so nav arrows stay within the filtered set while codeFor() keeps
-  // showing each cert's canonical (unfiltered) identity.
-  const visibleCerts = useMemo(
-    () => certs.map((c, i) => ({ c, i })).filter(x => !filter || x.c.type === filter),
-    [certs, filter]
-  );
-  const item = visibleCerts[index] || visibleCerts[0];
-  const c = item.c;
-  const absIndex = item.i;
-
-  // mount-only entrance tween — runs once, not on every prev/next
-  useEffect(() => {
-    const g = window.gsap;
-    const o = overlayRef.current, card = cardRef.current;
-    if (!o || !card) return;
-    if (!g || prefersReduce()) {
-      o.style.opacity = '1';
-      card.style.opacity = '1';
-      card.style.transform = 'none';
-      return;
-    }
-    let safety;
-    try {
-      g.fromTo(o, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, ease: 'power2.out' });
-      g.fromTo(card,
-        { autoAlpha: 0, y: 24, scale: 0.98 },
-        { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: 'power3.out' }
-      );
-    } catch (e) {
-      o.style.opacity = '1'; card.style.opacity = '1'; card.style.transform = 'none';
-    }
-    // fallback in case the tween is killed/errors before it ever paints
-    safety = setTimeout(() => {
-      if (card && getComputedStyle(card).opacity === '0') {
-        card.style.opacity = '1';
-        card.style.transform = 'none';
-      }
-    }, 800);
-    return () => clearTimeout(safety);
-  }, []);
-
-  // on prev/next: cross-fade only the inner media/body, not the whole card
-  useEffect(() => {
-    const g = window.gsap;
-    const card = cardRef.current;
-    if (!card || !g || prefersReduce()) return;
-    const media = card.querySelector('.cmc-media');
-    const body = card.querySelector('.cmc-body');
-    if (!media || !body) return;
-    g.fromTo([media, body], { autoAlpha: 0.4 }, { autoAlpha: 1, duration: 0.22, ease: 'power2.out' });
-  }, [index]);
-
-  // body scroll lock while open (ref-counted — safe alongside nav lock)
-  useEffect(() => {
-    lockBody();
-    return () => unlockBody();
-  }, []);
-
-  // Escape via the shared stack (only the topmost overlay closes);
-  // ← / → stay as their own listener since they're not ESC.
+  useEffect(() => { lockBody(); return () => unlockBody(); }, []);
   useEffect(() => pushEsc(onClose), [onClose]);
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'ArrowRight') onNav((index + 1) % visibleCerts.length);
-      else if (e.key === 'ArrowLeft') onNav((index - 1 + visibleCerts.length) % visibleCerts.length);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [index, visibleCerts.length, onNav]);
 
-  // Swipe gestures on touch — horizontal for prev/next, vertical (down) for
-  // close. Bound on the modal overlay (not the card body) so the body's own
-  // vertical scroll isn't hijacked when the user scrolls text.
-  useEffect(() => {
-    const o = overlayRef.current;
-    if (!o) return;
-    const SWIPE_MIN = 60;   // px before a gesture registers as a swipe
-    const SWIPE_MAX_OFF = 40; // orthogonal-axis noise tolerance
-    const s = { x: 0, y: 0, active: false, target: null };
-    const onDown = (e) => {
-      if (e.pointerType !== 'touch') return;
-      // ignore swipes that start inside the scrollable body/media (let the
-      // user scroll the description without triggering nav)
-      s.target = e.target;
-      const scroller = e.target.closest && e.target.closest('.cmc-body, .cmc-media');
-      if (scroller && scroller.scrollHeight > scroller.clientHeight + 4) { s.active = false; return; }
-      s.x = e.clientX; s.y = e.clientY; s.active = true;
-    };
-    const onUp = (e) => {
-      if (!s.active || e.pointerType !== 'touch') return;
-      s.active = false;
-      const dx = e.clientX - s.x, dy = e.clientY - s.y;
-      if (Math.abs(dx) > SWIPE_MIN && Math.abs(dy) < SWIPE_MAX_OFF){
-        if (dx < 0) onNav((index + 1) % visibleCerts.length);
-        else onNav((index - 1 + visibleCerts.length) % visibleCerts.length);
-      } else if (dy > SWIPE_MIN && Math.abs(dx) < SWIPE_MAX_OFF){
-        onClose();
-      }
-    };
-    o.addEventListener('pointerdown', onDown, { passive: true });
-    o.addEventListener('pointerup', onUp, { passive: true });
-    o.addEventListener('pointercancel', () => { s.active = false; }, { passive: true });
-    return () => {
-      o.removeEventListener('pointerdown', onDown);
-      o.removeEventListener('pointerup', onUp);
-    };
-  }, [index, visibleCerts.length, onNav, onClose]);
+  useLayoutEffect(() => {
+    const g = window.gsap;
+    if (!g || prefersReduce()) return;
+    g.fromTo(overlayRef.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, ease: 'power2.out' });
+  }, []);
 
-  const isTyped = TYPED.has(c.type);
-
-  const handleRootClick = (e) => {
-    if (e.target === overlayRef.current || e.target === backdropRef.current) {
-      onClose();
-    }
+  const onBackdrop = (e) => {
+    if (e.target === overlayRef.current) onClose();
   };
 
+  const primaryType = (cert.types && cert.types[0]) || 'other';
+
   return (
-    <div className="cert-modal" ref={overlayRef} role="dialog" aria-modal="true"
-         aria-label={tr(c.name, lang)} data-type={isTyped ? c.type : undefined}
-         onClick={handleRootClick}>
-      <div className="cert-modal-backdrop" ref={backdropRef} aria-hidden="true"></div>
-
-      {/* TODO: add "press ESC" microcopy near close */}
-      <button type="button" className="cert-modal-close" onClick={onClose}
-              aria-label={tr(UI.close, lang)}>
-        <span aria-hidden="true">✕</span>
-        <span className="cmc-label">{tr(UI.close, lang)}</span>
-      </button>
-
-      <button type="button" className="cert-modal-nav prev"
-              onClick={() => onNav((index - 1 + visibleCerts.length) % visibleCerts.length)}
-              aria-label="Previous">‹</button>
-      <button type="button" className="cert-modal-nav next"
-              onClick={() => onNav((index + 1) % visibleCerts.length)}
-              aria-label="Next">›</button>
-
-      <div className="cert-modal-card" ref={cardRef} onClick={(e) => e.stopPropagation()}>
-        <div className="cmc-media">
-          <Badge cert={c} wrapClass="cmc-badge" note={typeLabel(c.type, lang)} />
-          <div className="cmc-code">{codeFor(absIndex)}</div>
+    <div className="arc-overlay" ref={overlayRef} role="dialog" aria-modal="true"
+         aria-label={cert.title} onClick={onBackdrop}>
+      <div className="arc-ov-content">
+        <div className="arc-ov-visual">
+          <div className="arc-ov-visual-inner" data-type={primaryType}>
+            {cert.imageUrl
+              ? <img src={cert.imageUrl} alt="" draggable="false" />
+              : <span className="arc-ov-visual-label">{cert.program}</span>}
+          </div>
         </div>
 
-        <div className="cmc-body">
-          <div className="cmc-eyebrow">
-            <span className="cmc-typechip" data-type={c.type}>
-              {isTyped && <TypeIcon type={c.type} className="cmc-typechip-ico" />}
-              <span>{typeLabel(c.type, lang)}</span>
-            </span>
-            <span className="cmc-year">{tr(c.date, lang) || c.year}</span>
+        <div className="arc-ov-panel">
+          <button className="arc-ov-close" onClick={onClose} aria-label="Cerrar">
+            <span aria-hidden="true">✕</span>
+          </button>
+
+          <div>
+            <div className="arc-ov-breadcrumb">WORK — {code}</div>
+            <h2 className="arc-ov-title">{cert.title}</h2>
+            <div className="arc-ov-code">{code}</div>
+
+            <div className="arc-ov-meta">
+              <MetaRow k="PROGRAMA"   v={cert.program} />
+              <MetaRow k="EMISOR"     v={cert.issuer} />
+              <MetaRow k="AÑO"        v={cert.date} />
+              {cert.validation && <MetaRow k="VALIDACIÓN" v={cert.validation} />}
+            </div>
+
+            <div className="arc-ov-desc">
+              <button className="arc-ov-desc-toggle"
+                      onClick={() => setExpanded(e => !e)}
+                      aria-expanded={expanded}>
+                <span>READ MORE</span>
+                <span className="arc-ov-desc-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>
+              </button>
+              <div className="arc-ov-desc-body" style={{ maxHeight: expanded ? '400px' : '0px' }}>
+                <p>{cert.description}</p>
+              </div>
+            </div>
           </div>
 
-          <h2 className="cmc-name" tabIndex={-1} data-autofocus>{tr(c.name, lang)}</h2>
-          <p className="cmc-blurb">{tr(c.blurb, lang)}</p>
-
-          <div className="cmc-meta">
-            <div className="cmc-meta-item">
-              <div className="cmi-k">{tr(UI.issuer, lang)}</div>
-              <div className="cmi-v">{tr(c.issuer, lang)}</div>
-            </div>
-            <div className="cmc-meta-item">
-              <div className="cmi-k">{tr(UI.date, lang)}</div>
-              <div className="cmi-v">{tr(c.date, lang) || c.year}</div>
-            </div>
-          </div>
-
-          <p className="cmc-desc">{tr(c.description, lang)}</p>
-
-          {c.link && (
-            <a className="cmc-verify" href={c.link} target="_blank" rel="noopener noreferrer">
-              {tr(UI.verify, lang)} <span className="cb-arrow" aria-hidden="true">↗</span>
-            </a>
-          )}
-
-          <div className="cmc-counter">
-            {String(index + 1).padStart(2, '0')} / {String(visibleCerts.length).padStart(2, '0')}
+          <div className="arc-ov-actions">
+            {cert.credentialUrl && (
+              <a className="arc-ov-btn is-primary"
+                 href={cert.credentialUrl} target="_blank" rel="noopener noreferrer">
+                VERIFICAR CREDENCIAL
+              </a>
+            )}
+            <button className="arc-ov-btn" onClick={onClose}>MENU</button>
+            <button className="arc-ov-btn" onClick={onClose}>ALL CASE STUDIES</button>
           </div>
         </div>
       </div>
     </div>
   );
 }
+function MetaRow({ k, v }) {
+  return (
+    <div className="arc-ov-meta-row">
+      <div className="arc-ov-meta-k">{k}</div>
+      <div className="arc-ov-meta-v">{v}</div>
+    </div>
+  );
+}
 
-/* =================================================================
-   CertsNav — floating pill NavBar for this standalone page.
-   Reuses the sitewide nav classes (styles duplicated into
-   certifications.css so this page stays self-contained). Links to
-   the SPA (index.html#route) trigger a full page load — deliberate,
-   this page lives outside the SPA router.
-   ================================================================= */
+/* ========================== SHARED SITE NAV =========================== */
+/* Floating pill nav — mirrors chrome.jsx so this page shares the same nav
+   language as work / about / play / contact. Links to the SPA (index.html#route)
+   trigger a full page load — this page lives outside the SPA router. */
 const NAV_LABELS = {
-  home:    { es: 'Inicio',        en: 'Home',           zh: '首页' },
-  about:   { es: 'Sobre mí',      en: 'About',          zh: '关于' },
-  work:    { es: 'Trabajos',      en: 'Work',           zh: '作品' },
-  play:    { es: 'Juego',         en: 'Play',           zh: '实验' },
-  contact: { es: 'Contacto',      en: 'Contact',        zh: '联系' },
-  certs:   { es: 'Certificaciones', en: 'Certifications', zh: '认证' },
-  menu:    { es: 'Menú',          en: 'Menu',           zh: '菜单' },
-  close:   { es: 'Cerrar',        en: 'Close',          zh: '关闭' },
-  center:  { es: '// tú estás en · certificaciones', en: '// you are on · certifications', zh: '// 你在 · 认证' },
+  home:    'Inicio',
+  about:   'Sobre mí',
+  work:    'Trabajos',
+  play:    'Juego',
+  contact: 'Contacto',
+  certs:   'Certificaciones',
 };
 
-/* Two-layer cross-fade of certification badges — visual replacement
-   for the THREE particle canvas that lives in chrome.jsx's nav panel.
-   Uses window.CERTS_DATA badge URLs, filters to items that actually
-   have an image, and rotates every 1.8s while the panel is open. */
-function NavGallery({ open }) {
-  const [idx, setIdx] = useState(0);
-  const [flip, setFlip] = useState(false);
-
-  /* Source pool: certs with either a badge URL that resolves, or a
-     medal glyph fallback. We keep the raw cert so the layer can decide
-     img-vs-glyph per item and swap to glyph on load error. */
-  const items = useMemo(() => {
-    const arr = window.CERTS_DATA || [];
-    return arr.filter(c => c && (c.badge || c.medal));
-  }, []);
-
-  useEffect(() => {
-    if (!open || items.length < 2 || prefersReduce()) return;
-    const iv = setInterval(() => {
-      setIdx(i => (i + 1) % items.length);
-      setFlip(f => !f);
-    }, 1800);
-    return () => clearInterval(iv);
-  }, [open, items.length]);
-
-  if (!items.length) return null;
-  const prev = (idx - 1 + items.length) % items.length;
-  const aItem = flip ? items[prev] : items[idx];
-  const bItem = flip ? items[idx] : items[prev];
-  return (
-    <div className="nav-gallery" aria-hidden="true">
-      <NavGalleryLayer item={aItem} on={!flip} />
-      <NavGalleryLayer item={bItem} on={ flip} />
-    </div>
-  );
-}
-function NavGalleryLayer({ item, on }) {
-  const [err, setErr] = useState(false);
-  const cls = 'ng-img' + (on ? ' on' : '');
-  if (item && item.badge && !err) {
-    return <img className={cls} src={item.badge} alt="" draggable="false"
-                onError={() => setErr(true)} />;
-  }
-  return (
-    <div className={cls + ' ng-fallback'}>
-      <span className="ng-medal">{(item && item.medal) || '★'}</span>
-    </div>
-  );
-}
-
-function CertsNav({ lang, setLang }) {
+function SiteNav() {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef(null);
   const panelRef = useRef(null);
   const firstRun = useRef(true);
-
-  const menuWord  = tr(NAV_LABELS.menu, lang);
-  const closeWord = tr(NAV_LABELS.close, lang);
-  const centerText = open ? tr({ es: '// elige tu destino', en: '// choose destination', zh: '// 选择目的地' }, lang)
-                          : tr(NAV_LABELS.center, lang);
 
   const items = [
     { key: 'home',    href: 'index.html#home' },
@@ -870,331 +349,218 @@ function CertsNav({ lang, setLang }) {
     { key: 'certs',   href: 'certifications.html', active: true },
   ];
 
-  // open / close choreography — same clip-path drop as chrome.jsx, minus canvas
   useEffect(() => {
     const overlay = overlayRef.current, panel = panelRef.current;
     if (!overlay || !panel) return;
     const g = window.gsap;
     const reduce = prefersReduce();
-    const linkEls = Array.from(panel.querySelectorAll('.nav-item'));
-    const gallery = panel.querySelector('.nav-gallery');
-    const foot = panel.querySelector('.nav-footer-inner');
+    const linkEls = Array.from(panel.querySelectorAll('.arc-nav-item'));
+    const foot = panel.querySelector('.arc-nav-foot');
 
     if (firstRun.current) {
       firstRun.current = false;
-      if (g) { g.set(overlay, { autoAlpha: 0 }); g.set(panel, { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 }); }
+      if (g) {
+        g.set(overlay, { autoAlpha: 0 });
+        g.set(panel, { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 });
+      }
       return;
     }
 
     if (open) {
       lockBody();
       if (!g || reduce) {
-        if (g) { g.set(overlay, { autoAlpha: 1 }); g.set(panel, { clipPath: 'inset(0 0 0% 0)' }); g.set(linkEls, { y: 0, autoAlpha: 1 }); if (gallery) g.set(gallery, { autoAlpha: 1 }); if (foot) g.set(foot, { autoAlpha: 1 }); }
+        if (g) {
+          g.set(overlay, { autoAlpha: 1 });
+          g.set(panel, { clipPath: 'inset(0 0 0% 0)' });
+          g.set(linkEls, { y: 0, autoAlpha: 1 });
+          if (foot) g.set(foot, { autoAlpha: 1 });
+        }
         return;
       }
-      g.killTweensOf([overlay, panel, ...linkEls, gallery, foot]);
+      g.killTweensOf([overlay, panel, ...linkEls, foot]);
       g.to(overlay, { autoAlpha: 1, duration: 0.3 });
-      g.fromTo(panel, { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 }, { clipPath: 'inset(0 0 0% 0)', duration: 0.45, ease: 'power3.out' });
-      g.fromTo(linkEls, { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, stagger: 0.06, duration: 0.35, ease: 'power2.out', delay: 0.2 });
-      if (gallery) g.fromTo(gallery, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, delay: 0.5 });
-      if (foot)    g.fromTo(foot,    { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, delay: 0.65 });
+      g.fromTo(panel,
+        { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 },
+        { clipPath: 'inset(0 0 0% 0)', duration: 0.45, ease: 'power3.out' });
+      g.fromTo(linkEls,
+        { y: 16, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, stagger: 0.06, duration: 0.35, ease: 'power2.out', delay: 0.2 });
+      if (foot) g.fromTo(foot, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, delay: 0.55 });
     } else {
       unlockBody();
       if (!g || reduce) {
-        if (g) { g.set(overlay, { autoAlpha: 0 }); g.set(panel, { clipPath: 'inset(0 0 100% 0)' }); }
+        if (g) {
+          g.set(overlay, { autoAlpha: 0 });
+          g.set(panel, { clipPath: 'inset(0 0 100% 0)' });
+        }
         return;
       }
-      g.killTweensOf([overlay, panel, ...linkEls, gallery, foot]);
-      g.to([...linkEls, gallery, foot].filter(Boolean), { autoAlpha: 0, y: -8, stagger: 0.03, duration: 0.2 });
+      g.killTweensOf([overlay, panel, ...linkEls, foot]);
+      g.to([...linkEls, foot].filter(Boolean),
+        { autoAlpha: 0, y: -8, stagger: 0.03, duration: 0.2 });
       g.to(panel, { clipPath: 'inset(0 0 100% 0)', duration: 0.35, ease: 'power3.in', delay: 0.15 });
       g.to(overlay, { autoAlpha: 0, duration: 0.3, delay: 0.2 });
     }
   }, [open]);
 
-  // hamburger → X morph, same as chrome.jsx
-  useEffect(() => {
-    const g = window.gsap;
-    if (!g) return;
-    const reduce = prefersReduce();
-    if (reduce) {
-      g.set('.certs-nav .bar-1', { y: open ? 7 : 0, rotation: open ? 45 : 0 });
-      g.set('.certs-nav .bar-2', { autoAlpha: open ? 0 : 1 });
-      g.set('.certs-nav .bar-3', { y: open ? -7 : 0, rotation: open ? -45 : 0 });
-      return;
-    }
-    if (open) {
-      g.to('.certs-nav .bar-1', { y: 7,  rotation: 45,  transformOrigin: 'center', duration: 0.35, ease: 'power3.inOut' });
-      g.to('.certs-nav .bar-2', { autoAlpha: 0, duration: 0.2 });
-      g.to('.certs-nav .bar-3', { y: -7, rotation: -45, transformOrigin: 'center', duration: 0.35, ease: 'power3.inOut' });
-    } else {
-      g.to('.certs-nav .bar-1', { y: 0, rotation: 0, duration: 0.35, ease: 'power3.inOut' });
-      g.to('.certs-nav .bar-2', { autoAlpha: 1, duration: 0.3, delay: 0.1 });
-      g.to('.certs-nav .bar-3', { y: 0, rotation: 0, duration: 0.35, ease: 'power3.inOut' });
-    }
-  }, [open]);
-
-  // close on Escape (shared stack — yields to a modal open above it)
   useEffect(() => {
     if (!open) return;
     return pushEsc(() => setOpen(false));
   }, [open]);
 
-  const hoverIn = (e) => {
-    if (prefersReduce()) return;
-    const g = window.gsap; if (!g) return;
-    const nm = e.currentTarget.querySelector('.nav-link-name');
-    if (nm) g.to(nm, { x: 6, duration: 0.25, ease: 'power2.out' });
-  };
-  const hoverOut = (e) => {
-    const g = window.gsap; if (!g) return;
-    const nm = e.currentTarget.querySelector('.nav-link-name');
-    if (nm) g.to(nm, { x: 0, duration: 0.25, ease: 'power2.out' });
-  };
-
-  const toggleMenu = () => setOpen(o => !o);
+  const toggle = () => setOpen(o => !o);
 
   return (
-    <div className="certs-nav">
-      <div className={'nav-fl-overlay' + (open ? ' open' : '')} ref={overlayRef}
-           onClick={() => setOpen(false)} aria-hidden="true"></div>
+    <div className="arc-nav">
+      <div className={'arc-nav-overlay' + (open ? ' open' : '')}
+           ref={overlayRef} onClick={() => setOpen(false)} aria-hidden="true"></div>
 
-      <div className="nav-fl-panel" ref={panelRef} aria-hidden={!open}>
-        <nav className="nav-fl-links">
+      <div className="arc-nav-panel" ref={panelRef} aria-hidden={!open}>
+        <nav className="arc-nav-links">
           {items.map((it, i) => (
             <a key={it.key} href={it.href}
-               className={'nav-item' + (it.active ? ' active' : '')}
-               onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
-              <span className="nav-link-index">{String(i + 1).padStart(2, '0')}</span>
-              <span className="nav-link-name">{tr(NAV_LABELS[it.key], lang)}</span>
-              <span className="nav-chevron" aria-hidden="true">›</span>
+               className={'arc-nav-item' + (it.active ? ' is-active' : '')}>
+              <span className="arc-nav-item-idx">{String(i + 1).padStart(2, '0')}</span>
+              <span className="arc-nav-item-name">{NAV_LABELS[it.key]}</span>
+              <span className="arc-nav-item-arrow" aria-hidden="true">›</span>
             </a>
           ))}
         </nav>
-
-        <NavGallery open={open} />
-
-        <div className="nav-footer-inner">
-          <div className="nav-lang">
-            <button className={'nav-lang-btn' + (lang === 'es' ? ' active' : '')} onClick={() => setLang('es')}>ES</button>
-            <span className="nav-lang-sep">·</span>
-            <button className={'nav-lang-btn' + (lang === 'en' ? ' active' : '')} onClick={() => setLang('en')}>EN</button>
-            <span className="nav-lang-sep">·</span>
-            <button className={'nav-lang-btn' + (lang === 'zh' ? ' active' : '')} onClick={() => setLang('zh')}>中文</button>
-          </div>
-          <div className="nav-copy">© Lisa 2025</div>
+        <div className="arc-nav-foot">
+          <div className="arc-nav-copy">© Lisa 2025</div>
         </div>
       </div>
 
-      <header className={'nav-bar' + (open ? ' open' : '')} onClick={toggleMenu}>
-        <a className="nav-bar-logo logo-mark" href="index.html" onClick={(e) => e.stopPropagation()}>
-          <span className="lm-box">YT</span>
-          <span>LISA</span>
+      <header className={'arc-nav-bar' + (open ? ' is-open' : '')}>
+        <a className="arc-nav-logo" href="index.html">
+          <span className="arc-nav-logo-mark">YT</span>
+          <span className="arc-nav-logo-word">LISA</span>
         </a>
-        <div className="nav-bar-center" aria-hidden="true">{centerText}</div>
-        <button className={'nav-bar-menu' + (open ? ' is-open' : '')}
-                aria-expanded={open} aria-label={open ? closeWord : menuWord}
-                onClick={(e) => { e.stopPropagation(); toggleMenu(); }}>
-          <span className="nbm-icon">
-            <svg className="menu-icon" width="24" height="16" viewBox="0 0 24 16" fill="none" aria-hidden="true">
-              <rect className="bar bar-1" x="0" y="0"  width="24" height="2" fill="currentColor" rx="1"/>
-              <rect className="bar bar-2" x="0" y="7"  width="24" height="2" fill="currentColor" rx="1"/>
-              <rect className="bar bar-3" x="0" y="14" width="24" height="2" fill="currentColor" rx="1"/>
-            </svg>
-          </span>
+        <div className="arc-nav-center" aria-hidden="true">
+          // {open ? 'elige tu destino' : 'tú estás en · certificaciones'}
+        </div>
+        <button className={'arc-nav-menu' + (open ? ' is-open' : '')}
+                onClick={toggle}
+                aria-expanded={open}
+                aria-label={open ? 'Cerrar menú' : 'Abrir menú'}>
+          <span className="arc-nav-menu-bar b1"></span>
+          <span className="arc-nav-menu-bar b2"></span>
+          <span className="arc-nav-menu-bar b3"></span>
         </button>
       </header>
     </div>
   );
 }
 
-/* =================================================================
-   CertsLoader — standalone initial loader.
-   Counter 0→100 over ~0.6s, mosaic of badge images faded low behind
-   it, vignette for focus. Fades out on completion, then unmounts;
-   the underlying page then mounts fresh so its own reveal (nav +
-   header + tile clip-path stagger) fires visibly. Skipped entirely
-   on repeat visits within the session (see sessionStorage check in
-   CertificationsPage).
-   ================================================================= */
-function CertsLoader({ certs, onDone }) {
-  const rootRef = useRef(null);
-  const numRef = useRef(null);
-  const barRef = useRef(null);
-
-  useEffect(() => {
-    lockBody();
-    let unlocked = false;
-    const unlockOnce = () => { if (!unlocked) { unlocked = true; unlockBody(); } };
-    const g = window.gsap;
-    const reduce = prefersReduce();
-    if (!g || reduce) {
-      if (numRef.current) numRef.current.textContent = '100';
-      if (barRef.current) barRef.current.style.width = '100%';
-      const id = requestAnimationFrame(() => {
-        unlockOnce();
-        if (onDone) onDone();
-      });
-      return () => { cancelAnimationFrame(id); unlockOnce(); };
-    }
-    const counter = { v: 0 };
-    const tw = g.to(counter, {
-      v: 100,
-      duration: 0.6,
-      ease: 'power2.inOut',
-      onUpdate: () => {
-        const nv = Math.round(counter.v);
-        if (numRef.current) numRef.current.textContent = String(nv).padStart(3, '0');
-        if (barRef.current) barRef.current.style.width = nv + '%';
-      },
-      onComplete: () => {
-        g.to(rootRef.current, {
-          autoAlpha: 0,
-          duration: 0.6,
-          delay: 0.25,
-          ease: 'power2.out',
-          onComplete: () => {
-            unlockOnce();
-            if (onDone) onDone();
-          },
-        });
-      },
-    });
-    return () => { tw.kill(); unlockOnce(); };
-  }, []);
-
-  // Mosaic tiles: fill ~48 slots by cycling the badges that exist,
-  // graceful placeholder for entries without a badge URL.
-  const mosaicItems = useMemo(() => {
-    const src = (certs && certs.length) ? certs : [];
-    const withBadge = src.filter(c => c && c.badge);
-    // 48 cells on wide screens (8 cols × 6 rows), 24 on mobile (4 cols × 6
-    // rows) — the audit flagged that half the mosaic never renders under the
-    // vignette on <=760, so drop it to save fill and network per badge.
-    const isNarrow = typeof window !== 'undefined' && window.innerWidth < 768;
-    const target = isNarrow ? 24 : 48;
-    const out = [];
-    for (let i = 0; i < target; i++) {
-      if (withBadge.length) out.push(withBadge[i % withBadge.length]);
-      else out.push(src[i % Math.max(1, src.length)] || null);
-    }
-    return out;
-  }, [certs]);
-
-  return (
-    <div className="certs-loader" ref={rootRef}>
-      <div className="certs-loader-mosaic" aria-hidden="true">
-        {mosaicItems.map((c, i) => (
-          <Badge key={i} cert={c || {}} wrapClass="clm-cell" />
-        ))}
-      </div>
-      <div className="certs-loader-vignette" aria-hidden="true"></div>
-      <div className="certs-loader-center">
-        <div className="certs-loader-label" role="status" aria-live="polite">Y4 / CERT · INDEX — Loading</div>
-        <div aria-hidden="true">
-          <div className="certs-loader-num"><span ref={numRef}>000</span><span className="cln-pct">%</span></div>
-          <div className="certs-loader-bar"><span ref={barRef} style={{ width: '0%' }} /></div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ============================== PAGE ================================== */
 function CertificationsPage() {
-  const certs = (window.CERTS_DATA && window.CERTS_DATA.length) ? window.CERTS_DATA : [];
-  const [loading, setLoading] = useState(() => {
-    try {
-      if (sessionStorage.getItem('certsLoaded')) return false;
-    } catch (e) {}
-    return true;
-  });
-  const [lang, setLang] = useState('es');
-  const [modalIdx, setModalIdx] = useState(null);   // null → grid only; number → modal open
-  const [filter, setFilter] = useState(null);
-  const [headIn, setHeadIn] = useState(prefersReduce());
-  const hoverEnabled = useMediaQuery('(hover: hover) and (pointer: fine)')
-    && !useMediaQuery('(prefers-reduced-motion: reduce)');
-
-  const types = useMemo(() => {
-    const seen = [];
-    certs.forEach(c => { if (c.type && !seen.includes(c.type)) seen.push(c.type); });
-    return seen;
-  }, [certs]);
+  const [certs, setCerts] = useState(() => window.CERTS_DATA || []);
+  const [filter, setFilter] = useState('all');
+  const [overlayCert, setOverlayCert] = useState(null);
+  const [overlayIdx, setOverlayIdx] = useState(0);
+  const centerRef = useRef(null);
+  const isFilterAnimating = useRef(false);
 
   useEffect(() => {
-    if (prefersReduce()) { setHeadIn(true); return; }
-    const id = requestAnimationFrame(() => setHeadIn(true));
-    return () => cancelAnimationFrame(id);
+    if (!certs.length && window.CERTS_DATA) setCerts(window.CERTS_DATA);
   }, []);
 
-  const openCert = useCallback((i) => setModalIdx(i), []);
-  const closeCert = useCallback(() => setModalIdx(null), []);
-  const navCert = useCallback((i) => setModalIdx(i), []);
+  const filtered = useMemo(
+    () => filter === 'all' ? certs : certs.filter(c => (c.types || []).includes(filter)),
+    [certs, filter]
+  );
 
-  // if the active filter changes while the modal is open, its stored index
-  // (a position within the filtered set) can no longer be trusted — close it.
-  useEffect(() => { setModalIdx(null); }, [filter]);
+  const statusText = `ARCHIVE STUDIES(${String(filtered.length).padStart(2, '0')})`;
 
-  if (loading) {
-    const done = () => {
-      try { sessionStorage.setItem('certsLoaded', '1'); } catch (e) {}
-      setLoading(false);
-    };
-    return (
-      <div className="certs-page is-loading" data-screen-label="Certifications">
-        <CertsLoader certs={certs} onDone={done} />
-      </div>
-    );
-  }
+  const changeFilter = useCallback((next) => {
+    if (next === filter || isFilterAnimating.current) return;
+    const el = centerRef.current;
+    isFilterAnimating.current = true;
+    if (el) { el.classList.remove('is-in'); el.classList.add('is-out'); }
+    setTimeout(() => {
+      setFilter(next);
+      if (el) {
+        el.classList.remove('is-out');
+        el.classList.add('is-in');
+        setTimeout(() => {
+          if (el) el.classList.remove('is-in');
+          isFilterAnimating.current = false;
+        }, 300);
+      } else {
+        isFilterAnimating.current = false;
+      }
+    }, 180);
+  }, [filter]);
+
+  const openCert = useCallback((cert) => {
+    const idx = certs.indexOf(cert);
+    setOverlayCert(cert);
+    setOverlayIdx(idx >= 0 ? idx : 0);
+  }, [certs]);
+  const closeOverlay = useCallback(() => setOverlayCert(null), []);
 
   return (
-    <div className="certs-page" data-screen-label="Certifications">
-      <a className="skip-link" href="#certs-main"
-         onClick={(e)=>{ e.preventDefault(); const m = document.getElementById('certs-main'); if (m){ m.setAttribute('tabindex','-1'); m.focus({preventScroll:false}); m.scrollIntoView({block:'start'}); } }}>
-        Saltar al contenido
-      </a>
-      <CertsNav lang={lang} setLang={setLang} />
-      <div id="certs-main" className="certs-shell" tabIndex={-1}>
-        <div className={'certs-head certs-fade' + (headIn ? ' in' : '')}>
-          <div className="certs-eyebrow">{tr(UI.eyebrow, lang)}</div>
-          <h1 className="certs-title">{tr(UI.title, lang)}</h1>
-          <p className="certs-sub">{tr(UI.sub, lang)}</p>
+    <div className="arc-page">
+      <SiteNav />
+
+      <div className="arc-grid">
+        {/* ------- LEFT: sidebar (nav pills + heading + status) ------- */}
+        <aside className="arc-left">
+          <div className="arc-left-top">
+            <div className="arc-brandline">
+              <span className="arc-brandmark">YT</span>
+              <span className="arc-brandword">LISA</span>
+            </div>
+            <nav className="arc-filters" aria-label="Filter certifications">
+              {FILTERS.map(f => (
+                <Pill key={f.key}
+                      active={filter === f.key}
+                      onClick={() => changeFilter(f.key)}>
+                  {f.label}
+                </Pill>
+              ))}
+            </nav>
+          </div>
+
+          <div className="arc-heading">
+            <span className="arc-eyebrow">the archive</span>
+            <h1 className="arc-title">Global<br />Certification<br />Archive</h1>
+            <p className="arc-lead">
+              A curation of degrees, specialized courses, and recognitions
+              validating expertise in modern architectural and technical domains.
+            </p>
+          </div>
+
+          <div className="arc-status">{statusText}</div>
+        </aside>
+
+        {/* ------- CENTER: dual-column infinite carousel ------- */}
+        <div className="arc-center-wrap" ref={centerRef}>
+          {filtered.length > 0 ? (
+            <ArcCarousel items={filtered} paused={overlayCert !== null} onOpen={openCert} />
+          ) : (
+            <div className="arc-empty">No entries in this category.</div>
+          )}
         </div>
 
-        {certs.length === 0 ? (
-          <p className="certs-sub" style={{ color: 'var(--text-mid)' }}>
-            No certification data available.
-          </p>
-        ) : (
-          <Grid
-            certs={certs}
-            lang={lang}
-            onOpen={openCert}
-            filter={filter}
-            setFilter={setFilter}
-            types={types}
-            hoverEnabled={hoverEnabled}
-          />
-        )}
+        {/* ------- RIGHT: vertical labels rail ------- */}
+        <aside className="arc-right">
+          <span className="arc-vlabel">WORK</span>
+          <span className="arc-vlabel">MENU</span>
+          <span className="arc-vlabel">ALL PROJECT ARCHIVES</span>
+        </aside>
       </div>
 
-      {modalIdx !== null && certs.length > 0 && (
-        <CertModal
-          certs={certs}
-          lang={lang}
-          index={modalIdx}
-          onClose={closeCert}
-          onNav={navCert}
-          filter={filter}
-        />
+      {overlayCert && (
+        <ArcOverlay cert={overlayCert} index={overlayIdx} onClose={closeOverlay} />
       )}
     </div>
   );
 }
 
 /* -------------------------------------------------------------------
-   Bootstrap : load certifications.json, then mount. Mirrors the SPA's
-   data-before-render pattern (app.jsx) but scoped to this one page.
+   Bootstrap : load data, then mount. Mirrors the SPA's data-before-render
+   pattern (app.jsx) but scoped to this standalone page.
    ------------------------------------------------------------------- */
 (async function bootstrap() {
   try {

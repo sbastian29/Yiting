@@ -10,13 +10,13 @@ const getProjects = () => (window.DATA && Array.isArray(window.DATA.work)) ? win
 /* EMPTY STATE                                                          */
 /* ------------------------------------------------------------------ */
 function EmptyWork(){
+  const { lang } = useLang();
+  const label = tr({ es: 'Próximamente', en: 'Coming soon', zh: '即将上线' }, lang);
   return (
     <div className="work-empty">
       <div className="work-empty-card">
         <div className="eyebrow">∅ · NO PROJECTS LOADED</div>
-        <h2>Próximamente</h2>
-        <h2>Coming&nbsp;soon</h2>
-        <h2>即将上线</h2>
+        <h2>{label}</h2>
         <div className="work-empty-hint mono-tag">// edit data/work.json to populate the orbit</div>
       </div>
     </div>

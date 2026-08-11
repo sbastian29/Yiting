@@ -11,6 +11,11 @@ desktop.ini
 *.swo
 *~
 
+# Claude Code tooling
+.agents/
+skills-lock.json
+.claude/
+
 # Logs y temporales
 *.log
 npm-debug.log*

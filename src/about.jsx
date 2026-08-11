@@ -18,6 +18,11 @@ function GlitchName({ text }){
     });
   }, []);
   useEffect(()=>{
+    // Gate the auto-glitch on reduced-motion: no mount fire, no 11s interval.
+    // The hover trigger on the h1 stays functional so users can still see it.
+    const reduce = (window.getViewport && window.getViewport().reduceMotion) ||
+      (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (reduce) return;
     const id = setTimeout(fire, 600);
     const iv = setInterval(()=>{ if(Math.random()<0.35) fire(); }, 11000);
     return ()=>{ clearTimeout(id); clearInterval(iv); };

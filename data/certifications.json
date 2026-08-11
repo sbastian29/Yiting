@@ -1,762 +1,110 @@
 [
   {
-    "year": "2025",
-    "medal": "🥇",
-    "place": {
-      "es": "1º",
-      "en": "1st",
-      "zh": "第一"
-    },
-    "event": "Gala de Videojuegos UCM · VITRUM",
-    "type": "award",
-    "name": {
-      "es": "1er Puesto · VITRUM",
-      "en": "1st Place · VITRUM",
-      "zh": "第一名 · VITRUM"
-    },
-    "issuer": {
-      "es": "Gala de Videojuegos UCM",
-      "en": "UCM Video Game Gala",
-      "zh": "马德里康普顿斯大学电子游戏盛典"
-    },
-    "date": {
-      "es": "2025",
-      "en": "2025",
-      "zh": "2025 年"
-    },
-    "blurb": {
-      "es": "Primer premio del jurado por el arte 3D y el acabado de superficies de VITRUM.",
-      "en": "First-prize jury award for the 3D art and surface finish of VITRUM.",
-      "zh": "凭 VITRUM 的 3D 美术与表面处理荣获评审组一等奖。"
-    },
-    "description": {
-      "es": "VITRUM se alzó con el primer puesto en la Gala de Videojuegos de la Universidad Complutense de Madrid. El jurado destacó el modelado hard-surface, el trabajo de texturizado PBR y la coherencia visual del proyecto de principio a fin.",
-      "en": "VITRUM took first place at the Universidad Complutense de Madrid Video Game Gala. The jury highlighted its hard-surface modeling, PBR texturing work and the visual coherence of the project from start to finish.",
-      "zh": "VITRUM 在马德里康普顿斯大学电子游戏盛典上摘得第一名。评审组特别赞赏其硬表面建模、PBR 贴图工作以及项目自始至终的视觉一致性。"
-    },
-    "link": "https://example.com/verify/vitrum-ucm-2025",
-    "badge": "assets/badges/cert-vitrum.png"
+    "id": "1",
+    "title": "Técnico Superior en Desarrollo de Aplicaciones Multiplataforma",
+    "issuer": "IES Virgen de la Paloma",
+    "date": "2024",
+    "types": ["universidad"],
+    "program": "DAM",
+    "validation": "Comunidad de Madrid",
+    "description": "Certificación académica oficial DAM. Nota final: 8.00.",
+    "imageUrl": null,
+    "credentialUrl": null
   },
   {
-    "year": "2024",
-    "medal": "🥇",
-    "place": {
-      "es": "1º",
-      "en": "1st",
-      "zh": "第一"
-    },
-    "event": "HackJam Madrid in Game · Elemental Odyssey",
-    "type": "award",
-    "name": {
-      "es": "1er Puesto · Elemental Odyssey",
-      "en": "1st Place · Elemental Odyssey",
-      "zh": "第一名 · Elemental Odyssey"
-    },
-    "issuer": {
-      "es": "HackJam Madrid in Game",
-      "en": "HackJam Madrid in Game",
-      "zh": "HackJam Madrid in Game"
-    },
-    "date": {
-      "es": "2024",
-      "en": "2024",
-      "zh": "2024 年"
-    },
-    "blurb": {
-      "es": "Ganadora de la game jam con Elemental Odyssey, creada en 48 horas.",
-      "en": "Game-jam winner with Elemental Odyssey, built in 48 hours.",
-      "zh": "凭 48 小时打造的 Elemental Odyssey 赢得 game jam 冠军。"
-    },
-    "description": {
-      "es": "Elemental Odyssey ganó el primer puesto en la HackJam Madrid in Game, una game jam de 48 horas. Se valoró la dirección artística, la rapidez de producción del arte 3D y la cohesión del equipo bajo presión.",
-      "en": "Elemental Odyssey won first place at HackJam Madrid in Game, a 48-hour game jam. The judges rewarded the art direction, the speed of 3D art production and the team's cohesion under pressure.",
-      "zh": "Elemental Odyssey 在 48 小时的 HackJam Madrid in Game 中夺得第一名。评委认可其艺术指导、3D 美术的生产速度以及团队在压力下的凝聚力。"
-    },
-    "link": "https://example.com/verify/hackjam-elemental-2024",
-    "badge": "assets/badges/cert-elemental.png"
+    "id": "2",
+    "title": "Título de Bachiller — Modalidad Ciencias",
+    "issuer": "IES Ntra. Sra. de la Almudena",
+    "date": "2022",
+    "types": ["universidad"],
+    "program": "Bachiller",
+    "validation": "Comunidad de Madrid",
+    "description": "Título oficial de Bachiller en Ciencias. Calificación final: 7.32.",
+    "imageUrl": null,
+    "credentialUrl": null
   },
   {
-    "year": "2023",
-    "medal": "🥈",
-    "place": {
-      "es": "2º",
-      "en": "2nd",
-      "zh": "第二"
-    },
-    "event": "HackJam Madrid in Game · Urbanismo",
-    "type": "award",
-    "name": {
-      "es": "2º Puesto · Urbanismo",
-      "en": "2nd Place · Urbanismo",
-      "zh": "第二名 · Urbanismo"
-    },
-    "issuer": {
-      "es": "HackJam Madrid in Game",
-      "en": "HackJam Madrid in Game",
-      "zh": "HackJam Madrid in Game"
-    },
-    "date": {
-      "es": "2023",
-      "en": "2023",
-      "zh": "2023 年"
-    },
-    "blurb": {
-      "es": "Segundo puesto por el proyecto de tema urbano Urbanismo.",
-      "en": "Runner-up for the urban-themed project Urbanismo.",
-      "zh": "凭城市主题项目 Urbanismo 获得第二名。"
-    },
-    "description": {
-      "es": "Urbanismo obtuvo el segundo puesto en la HackJam Madrid in Game. El proyecto exploraba entornos urbanos estilizados, con foco en el modelado modular y la lectura clara de las siluetas arquitectónicas.",
-      "en": "Urbanismo earned second place at HackJam Madrid in Game. The project explored stylised urban environments, focusing on modular modeling and clear reading of architectural silhouettes.",
-      "zh": "Urbanismo 在 HackJam Madrid in Game 中获得第二名。项目探索了风格化的城市环境，专注于模块化建模与建筑轮廓的清晰呈现。"
-    },
-    "link": "https://example.com/verify/hackjam-urbanismo-2023",
-    "badge": "assets/badges/cert-urbanismo.png"
+    "id": "3",
+    "title": "Data Science: R Programming Complete Diploma",
+    "issuer": "Udemy — SDE Arts",
+    "date": "2025",
+    "types": ["curso-online"],
+    "program": "Data Science R",
+    "validation": "UC-569ea487",
+    "description": "Diploma completo de R para Data Science. 5 horas.",
+    "imageUrl": null,
+    "credentialUrl": null
   },
   {
-    "year": "2020",
-    "medal": "★",
-    "place": {
-      "es": "Beca",
-      "en": "Scholarship",
-      "zh": "奖学金"
-    },
-    "event": "Amancio Ortega · MIT + Cambridge",
-    "type": "scholarship",
-    "name": {
-      "es": "Beca Amancio Ortega",
-      "en": "Amancio Ortega Scholarship",
-      "zh": "Amancio Ortega 奖学金"
-    },
-    "issuer": {
-      "es": "Fundación Amancio Ortega · MIT + Cambridge",
-      "en": "Amancio Ortega Foundation · MIT + Cambridge",
-      "zh": "Amancio Ortega 基金会 · MIT + 剑桥"
-    },
-    "date": {
-      "es": "2020",
-      "en": "2020",
-      "zh": "2020 年"
-    },
-    "blurb": {
-      "es": "Beca competitiva para estudiar un año entre el MIT y Cambridge.",
-      "en": "Competitive scholarship for a year of study between MIT and Cambridge.",
-      "zh": "在 MIT 与剑桥求学一年的竞争性奖学金。"
-    },
-    "description": {
-      "es": "La Beca Amancio Ortega financia a estudiantes destacados para cursar un año académico en el extranjero. Otorgada tras un proceso de selección competitivo, permitió formación entre el MIT y la Universidad de Cambridge, cimentando una base internacional y trilingüe.",
-      "en": "The Amancio Ortega Scholarship funds outstanding students for an academic year abroad. Awarded after a competitive selection process, it enabled study between MIT and the University of Cambridge, laying an international, trilingual foundation.",
-      "zh": "Amancio Ortega 奖学金资助优秀学生赴海外进行一学年的学习。经过竞争性选拔后获得，使其得以在 MIT 与剑桥大学之间求学，奠定了国际化、三语的基础。"
-    },
-    "link": "https://example.com/verify/amancio-ortega-2020",
-    "badge": "assets/badges/cert-amancio.png"
+    "id": "4",
+    "title": "Complete Guide in HTML & CSS",
+    "issuer": "Udemy — Sara Academy",
+    "date": "2024",
+    "types": ["curso-online"],
+    "program": "HTML & CSS",
+    "validation": "UC-bf39a8a7",
+    "description": "Guía completa de HTML y CSS para sitios responsive.",
+    "imageUrl": null,
+    "credentialUrl": null
   },
   {
-    "year": "2023",
-    "medal": "★",
-    "place": {
-      "es": "Beca",
-      "en": "Scholarship",
-      "zh": "奖学金"
-    },
-    "event": "Placeholder 1",
-    "type": "scholarship",
-    "name": {
-      "es": "Placeholder 1 · Beca",
-      "en": "Placeholder 1 · Scholarship",
-      "zh": "占位 1 · 奖学金"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2023",
-      "en": "2023",
-      "zh": "2023 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-1",
-    "badge": ""
+    "id": "5",
+    "title": "BigData+: Módulo 0",
+    "issuer": "AHK — Cámara Alemana",
+    "date": "2024",
+    "types": ["curso-online"],
+    "program": "BigData+",
+    "validation": "AHK",
+    "description": "10 horas sobre análisis de datos con Python y Pandas.",
+    "imageUrl": null,
+    "credentialUrl": null
   },
   {
-    "year": "2022",
-    "medal": "✦",
-    "place": {
-      "es": "Certificación",
-      "en": "Certification",
-      "zh": "认证"
-    },
-    "event": "Placeholder 2",
-    "type": "certification",
-    "name": {
-      "es": "Placeholder 2 · Certificación",
-      "en": "Placeholder 2 · Certification",
-      "zh": "占位 2 · 认证"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2022",
-      "en": "2022",
-      "zh": "2022 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-2",
-    "badge": ""
+    "id": "6",
+    "title": "LanguageCert B2 — Certificate in ESOL",
+    "issuer": "LanguageCert",
+    "date": "2021",
+    "types": ["idioma"],
+    "program": "B2 English",
+    "validation": "Ofqual",
+    "description": "Certificación oficial B2 en inglés. High Pass.",
+    "imageUrl": null,
+    "credentialUrl": null
   },
   {
-    "year": "2021",
-    "medal": "✷",
-    "place": {
-      "es": "Reconocimiento",
-      "en": "Recognition",
-      "zh": "荣誉"
-    },
-    "event": "Placeholder 3",
-    "type": "recognition",
-    "name": {
-      "es": "Placeholder 3 · Reconocimiento",
-      "en": "Placeholder 3 · Recognition",
-      "zh": "占位 3 · 荣誉"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2021",
-      "en": "2021",
-      "zh": "2021 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-3",
-    "badge": ""
+    "id": "7",
+    "title": "Carta de Recomendación — Junior Data Engineer",
+    "issuer": "Next Digital Hub",
+    "date": "2024",
+    "types": ["reconocimiento"],
+    "program": "Junior Data Engineer",
+    "validation": "Next Digital Hub",
+    "description": "Carta de recomendación tras 6 meses como Junior Data Engineer.",
+    "imageUrl": null,
+    "credentialUrl": null
   },
   {
-    "year": "2020",
-    "medal": "🥇",
-    "place": {
-      "es": "Premio",
-      "en": "Award",
-      "zh": "奖项"
-    },
-    "event": "Placeholder 4",
-    "type": "award",
-    "name": {
-      "es": "Placeholder 4 · Premio",
-      "en": "Placeholder 4 · Award",
-      "zh": "占位 4 · 奖项"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2020",
-      "en": "2020",
-      "zh": "2020 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-4",
-    "badge": ""
+    "id": "8",
+    "title": "Microsoft Certified: Azure AI Fundamentals",
+    "issuer": "Microsoft",
+    "date": "2026",
+    "types": ["reconocimiento", "cloud"],
+    "program": "Azure AI",
+    "validation": "PNDK-uScT",
+    "description": "Certificación oficial Microsoft Azure AI Fundamentals.",
+    "imageUrl": null,
+    "credentialUrl": null
   },
   {
-    "year": "2019",
-    "medal": "★",
-    "place": {
-      "es": "Beca",
-      "en": "Scholarship",
-      "zh": "奖学金"
-    },
-    "event": "Placeholder 5",
-    "type": "scholarship",
-    "name": {
-      "es": "Placeholder 5 · Beca",
-      "en": "Placeholder 5 · Scholarship",
-      "zh": "占位 5 · 奖学金"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2019",
-      "en": "2019",
-      "zh": "2019 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-5",
-    "badge": ""
-  },
-  {
-    "year": "2024",
-    "medal": "✦",
-    "place": {
-      "es": "Certificación",
-      "en": "Certification",
-      "zh": "认证"
-    },
-    "event": "Placeholder 6",
-    "type": "certification",
-    "name": {
-      "es": "Placeholder 6 · Certificación",
-      "en": "Placeholder 6 · Certification",
-      "zh": "占位 6 · 认证"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2024",
-      "en": "2024",
-      "zh": "2024 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-6",
-    "badge": ""
-  },
-  {
-    "year": "2023",
-    "medal": "✷",
-    "place": {
-      "es": "Reconocimiento",
-      "en": "Recognition",
-      "zh": "荣誉"
-    },
-    "event": "Placeholder 7",
-    "type": "recognition",
-    "name": {
-      "es": "Placeholder 7 · Reconocimiento",
-      "en": "Placeholder 7 · Recognition",
-      "zh": "占位 7 · 荣誉"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2023",
-      "en": "2023",
-      "zh": "2023 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-7",
-    "badge": ""
-  },
-  {
-    "year": "2022",
-    "medal": "🥇",
-    "place": {
-      "es": "Premio",
-      "en": "Award",
-      "zh": "奖项"
-    },
-    "event": "Placeholder 8",
-    "type": "award",
-    "name": {
-      "es": "Placeholder 8 · Premio",
-      "en": "Placeholder 8 · Award",
-      "zh": "占位 8 · 奖项"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2022",
-      "en": "2022",
-      "zh": "2022 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-8",
-    "badge": ""
-  },
-  {
-    "year": "2021",
-    "medal": "★",
-    "place": {
-      "es": "Beca",
-      "en": "Scholarship",
-      "zh": "奖学金"
-    },
-    "event": "Placeholder 9",
-    "type": "scholarship",
-    "name": {
-      "es": "Placeholder 9 · Beca",
-      "en": "Placeholder 9 · Scholarship",
-      "zh": "占位 9 · 奖学金"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2021",
-      "en": "2021",
-      "zh": "2021 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-9",
-    "badge": ""
-  },
-  {
-    "year": "2020",
-    "medal": "✦",
-    "place": {
-      "es": "Certificación",
-      "en": "Certification",
-      "zh": "认证"
-    },
-    "event": "Placeholder 10",
-    "type": "certification",
-    "name": {
-      "es": "Placeholder 10 · Certificación",
-      "en": "Placeholder 10 · Certification",
-      "zh": "占位 10 · 认证"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2020",
-      "en": "2020",
-      "zh": "2020 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-10",
-    "badge": ""
-  },
-  {
-    "year": "2019",
-    "medal": "✷",
-    "place": {
-      "es": "Reconocimiento",
-      "en": "Recognition",
-      "zh": "荣誉"
-    },
-    "event": "Placeholder 11",
-    "type": "recognition",
-    "name": {
-      "es": "Placeholder 11 · Reconocimiento",
-      "en": "Placeholder 11 · Recognition",
-      "zh": "占位 11 · 荣誉"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2019",
-      "en": "2019",
-      "zh": "2019 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-11",
-    "badge": ""
-  },
-  {
-    "year": "2024",
-    "medal": "🥇",
-    "place": {
-      "es": "Premio",
-      "en": "Award",
-      "zh": "奖项"
-    },
-    "event": "Placeholder 12",
-    "type": "award",
-    "name": {
-      "es": "Placeholder 12 · Premio",
-      "en": "Placeholder 12 · Award",
-      "zh": "占位 12 · 奖项"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2024",
-      "en": "2024",
-      "zh": "2024 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-12",
-    "badge": ""
-  },
-  {
-    "year": "2023",
-    "medal": "★",
-    "place": {
-      "es": "Beca",
-      "en": "Scholarship",
-      "zh": "奖学金"
-    },
-    "event": "Placeholder 13",
-    "type": "scholarship",
-    "name": {
-      "es": "Placeholder 13 · Beca",
-      "en": "Placeholder 13 · Scholarship",
-      "zh": "占位 13 · 奖学金"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2023",
-      "en": "2023",
-      "zh": "2023 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-13",
-    "badge": ""
-  },
-  {
-    "year": "2022",
-    "medal": "✦",
-    "place": {
-      "es": "Certificación",
-      "en": "Certification",
-      "zh": "认证"
-    },
-    "event": "Placeholder 14",
-    "type": "certification",
-    "name": {
-      "es": "Placeholder 14 · Certificación",
-      "en": "Placeholder 14 · Certification",
-      "zh": "占位 14 · 认证"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2022",
-      "en": "2022",
-      "zh": "2022 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-14",
-    "badge": ""
-  },
-  {
-    "year": "2021",
-    "medal": "✷",
-    "place": {
-      "es": "Reconocimiento",
-      "en": "Recognition",
-      "zh": "荣誉"
-    },
-    "event": "Placeholder 15",
-    "type": "recognition",
-    "name": {
-      "es": "Placeholder 15 · Reconocimiento",
-      "en": "Placeholder 15 · Recognition",
-      "zh": "占位 15 · 荣誉"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2021",
-      "en": "2021",
-      "zh": "2021 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-15",
-    "badge": ""
-  },
-  {
-    "year": "2020",
-    "medal": "🥇",
-    "place": {
-      "es": "Premio",
-      "en": "Award",
-      "zh": "奖项"
-    },
-    "event": "Placeholder 16",
-    "type": "award",
-    "name": {
-      "es": "Placeholder 16 · Premio",
-      "en": "Placeholder 16 · Award",
-      "zh": "占位 16 · 奖项"
-    },
-    "issuer": {
-      "es": "Emisor de ejemplo",
-      "en": "Sample Issuer",
-      "zh": "示例颁发方"
-    },
-    "date": {
-      "es": "2020",
-      "en": "2020",
-      "zh": "2020 年"
-    },
-    "blurb": {
-      "es": "Certificación de ejemplo para probar el comportamiento fijado del riel.",
-      "en": "Sample certification to test the rail pinned behavior.",
-      "zh": "用于测试导轨固定行为的示例认证。"
-    },
-    "description": {
-      "es": "Entrada de marcador de posición generada para verificar el paginado por lotes y el pin del riel cuando hay más certificaciones de las que caben en la ventana visible.",
-      "en": "Placeholder entry generated to verify batch pagination and rail pinning when there are more certifications than fit in the visible window.",
-      "zh": "生成的占位条目，用于在认证数量超过可见窗口时验证批量分页与导轨固定。"
-    },
-    "link": "https://example.com/verify/placeholder-16",
-    "badge": ""
+    "id": "9",
+    "title": "Voluntariado — Adopta Un Abuelo",
+    "issuer": "Fundación Mayores de Hoy",
+    "date": "2019",
+    "types": ["reconocimiento"],
+    "program": "Voluntariado",
+    "validation": "Fundación La Caixa",
+    "description": "Reconocimiento por participación en jornadas intergeneracionales.",
+    "imageUrl": null,
+    "credentialUrl": null
   }
 ]

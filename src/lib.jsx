@@ -5,7 +5,7 @@ const { useState, useEffect, useRef, useCallback, useContext, createContext, use
 
 /* ---------- per-route accent tokens ---------- */
 const PAGE_TOKENS = {
-  home:    { accent: '#c4b5fd', glow: 'rgba(196,181,253,0.18)' },
+  home:    { accent: '#eddcb8', glow: 'rgba(237,220,184,0.16)' },
   work:    { accent: '#fbbf7a', glow: 'rgba(251,191,122,0.14)' },
   about:   { accent: '#7dd3fc', glow: 'rgba(125,211,252,0.13)' },
   play:    { accent: '#4ade80', glow: 'rgba(74,222,128,0.12)'  },

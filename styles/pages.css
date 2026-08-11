@@ -43,7 +43,7 @@
 .scroll-hint { position:absolute; bottom:calc(34px + env(safe-area-inset-bottom, 0px)); left:clamp(20px,6vw,110px); display:flex; align-items:center; gap:12px;
   font-family:var(--f-mono); font-size:12px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-mid); }
 .scroll-hint .sh-line { width:46px; height:1px; background:var(--text-dim); position:relative; overflow:hidden; }
-.scroll-hint .sh-line::after { content:""; position:absolute; inset:0; background:var(--page-accent); animation:shSweep 2.4s var(--ease-out) infinite; }
+.scroll-hint .sh-line::after { content:""; position:absolute; inset:0; background:var(--page-accent); animation:shSweep 2.4s var(--ease-out) 2 forwards; }
 @keyframes shSweep { 0%{transform:translateX(-100%);} 60%,100%{transform:translateX(100%);} }
 
 /* journey (pinned) */
@@ -111,7 +111,7 @@
 /* zigzag list */
 .work-list { position:relative; z-index:3; padding:60px clamp(20px,6vw,110px) 140px; }
 .work-list .eyebrow { margin-bottom:40px; }
-.zz-row { display:flex; align-items:center; gap:clamp(20px,4vw,60px); padding:30px 0; border-top:1px solid var(--border); }
+.zz-row { display:flex; align-items:center; gap:clamp(20px,4vw,60px); padding:var(--sp-6) 0; border-top:1px solid var(--border); }
 .zz-row.right { flex-direction:row-reverse; text-align:right; }
 .zz-thumb { flex:0 0 38%; }
 .zz-thumb .ph { aspect-ratio:16/10; border-radius:5px; }
@@ -119,7 +119,7 @@
 .zz-row.right .zz-info { align-items:flex-end; }
 .zz-id { font-family:var(--f-mono); font-size:12px; color:var(--page-accent); letter-spacing:0.1em; }
 .zz-title { font-family:var(--f-head); font-weight:700; font-size:clamp(26px,4vw,54px); line-height:1; }
-.zz-meta { font-size:14px; color:var(--text-mid); }
+.zz-meta { font-size:14px; color:var(--text-mid); max-width:52ch; }
 .zz-award { font-family:var(--f-mono); font-size:12px; color:var(--warm); }
 @media (max-width:767.98px){ .zz-row,.zz-row.right{ flex-direction:column; text-align:left; align-items:flex-start;} .zz-row.right .zz-info{align-items:flex-start;} .zz-thumb{flex:none; width:100%;} }
 
@@ -155,7 +155,7 @@
 /* about — by the numbers */
 .about-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(16px,3vw,40px); width:100%; border-top:1px solid var(--border); padding-top:34px; }
 .astat { display:flex; flex-direction:column; gap:8px; }
-.astat-num { font-family:var(--f-head); font-weight:800; font-size:clamp(44px,7vw,96px); line-height:1; color:var(--page-accent); }
+.astat-num { font-family:var(--f-head); font-weight:800; font-size:var(--fs-h2); line-height:1; color:var(--page-accent); }
 .astat-label { font-family:var(--f-mono); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); }
 @media (max-width:760px){ .about-stats{ grid-template-columns:repeat(2,1fr); gap:28px; } }
 
@@ -193,12 +193,15 @@
 .pc-cursor { display:inline-block; width:8px; height:1.1em; background:var(--page-accent); vertical-align:-2px; animation:cursorBlink 1s steps(2) infinite; }
 .avail-dot { color:var(--green); }
 
-/* tools grid */
-.tools-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:18px; }
-.tool-cat { border:1px solid var(--border); border-radius:5px; padding:22px; }
-.tool-cat h3 { font-family:var(--f-mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--page-accent); margin-bottom:14px; }
-.tool-cat ul { list-style:none; display:flex; flex-direction:column; gap:8px; }
-.tool-cat li { font-size:15px; color:var(--text); }
+/* tools — flat categorized chip list, less "AI card grid" than the previous
+   auto-fit boxed layout. Category names inline as monospaced labels; tools
+   render as subtle bordered chips. */
+.tools-grid { display:flex; flex-direction:column; gap:22px; }
+.tool-cat { border:none; padding:0; display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 14px; }
+.tool-cat h3 { font-family:var(--f-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-mid); margin:0; flex:0 0 100%; }
+.tool-cat ul { list-style:none; display:flex; flex-wrap:wrap; gap:8px 10px; padding:0; margin:0; }
+.tool-cat li { font-family:var(--f-body); font-size:13.5px; color:var(--text); padding:6px 12px; border:1px solid var(--border); border-radius:999px; transition:border-color .3s var(--ease-out), color .3s var(--ease-out); }
+.tool-cat li:hover { border-color:var(--page-accent); color:var(--page-accent); }
 
 /* timeline — hélice horizontal: el tiempo avanza a la derecha,
    la cámara panea siguiendo la punta luminosa que dibuja la espiral */
@@ -207,7 +210,7 @@
   width: 100vw;                               /* break-out del max-width del chapter */
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  height: 320svh;                              /* zona de scroll para dibujar la espiral — svh evita que crezca cuando la barra iOS se colapsa */
+  height: 240svh;                              /* zona de scroll para dibujar la espiral — svh evita que crezca cuando la barra iOS se colapsa. Reducido de 320 para menos fatiga de scroll pinned. */
   margin-top: 18px;
 }
 .tl-sp-stage {
@@ -622,9 +625,9 @@
 .oh-title {
   font-family: var(--f-head);
   font-weight: 800;
-  font-size: clamp(32px,5.5vw,80px);
+  font-size: var(--fs-h2);
   letter-spacing: -0.03em;
-  line-height: 0.92;
+  line-height: 0.98;
   display: flex;
   flex-wrap: wrap;
   gap: 0 0.25em;
@@ -1007,7 +1010,7 @@
 .contact-bg::after { content:''; position:absolute; inset:0; pointer-events:none;
   background:radial-gradient(120% 90% at 50% 42%, transparent 38%, rgba(6,6,8,0.72) 100%); }
 
-.contact-inner { position:relative; z-index:2; width:min(720px,100%); display:flex; flex-direction:column; align-items:stretch; gap:24px; }
+.contact-inner { position:relative; z-index:2; width:min(720px,100%); display:flex; flex-direction:column; align-items:stretch; gap:var(--sp-7); }
 .cf-intro { text-align:left; }
 
 /* --- 2 · tilting glass card --- */
@@ -1032,7 +1035,7 @@
 .cf-field { position:relative; display:flex; flex-direction:column; gap:7px;
   transform:translateZ(26px); transition:transform .4s var(--ease-out); }
 .cf-field:focus-within { transform:translateZ(48px); }
-.cf-label { font-family:var(--f-mono); font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mid); }
+.cf-label { font-family:var(--f-mono); font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-mid); }
 .cf-input, .cf-select { width:100%; font-family:var(--f-body); font-size:16px; color:var(--text);
   background-color:rgba(6,6,8,0.6); border:1px solid var(--border); border-radius:9px;
   padding:14px 14px; outline:none; min-height:48px;
@@ -1202,11 +1205,22 @@ textarea.cf-input { resize:vertical; min-height:120px; line-height:1.6; }
 }
 
 /* ===================================================================
-   === MEJORA 2B · CONTACT · "soon" socials ==========================
+   === CONTACT · "soon" socials — non-link muted span =================
+   Not a link (no role, no href), so screen readers announce it as
+   plain text; sighted users get a muted colour + default cursor.
    =================================================================== */
-.contact-socials a.soon::after {
-  content: "· soon"; margin-left: 6px;
-  font-size: 9px; letter-spacing: 0.1em; color: var(--text-dim);
+.contact-socials .social-soon {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  cursor: default;
+  user-select: none;
+}
+.contact-socials .social-soon em {
+  font-style: normal;
+  color: var(--text-dim);
+  opacity: 0.8;
 }
 
 /* ===================================================================
@@ -2257,3 +2271,58 @@ body.in-work .cursor-trail { opacity: 0 !important; }
     font-size: 10.5px !important;
   }
 }
+
+/* ===================================================================
+   REDESIGN PASS · overrides puntuales (mezcla custom · M/M/M)
+   Auditoría → problemas 🔴 alto de cada sección. Mobile intacto.
+   =================================================================== */
+
+/* --- HOME · romper simetría stats + variar aspects de feat --- */
+@media (min-width: 768px) {
+  .home-stats {
+    grid-template-columns: 1.7fr 1fr 1fr 1fr;
+    align-items: end;
+  }
+  .home-stats .stat-cell:first-child .stat-num {
+    font-size: clamp(56px, 8vw, 108px);
+    letter-spacing: -0.02em;
+  }
+  .home-stats .stat-cell:not(:first-child) .stat-num em {
+    color: var(--text);   /* solo el featured queda en accent */
+  }
+
+  .home-feat .feat-card:nth-child(1) .ph { aspect-ratio: 5/4; }
+  .home-feat .feat-card:nth-child(2) .ph { aspect-ratio: 3/4; }
+  .home-feat .feat-card:nth-child(2) {
+    transform: translateY(clamp(20px, 4vh, 60px));  /* offset editorial */
+  }
+}
+
+/* --- WORK · head más ancho + zigzag con aspects variados --- */
+.work-head { max-width: 1000px; }
+.work-head h1 { text-wrap: balance; }
+@media (min-width: 768px) {
+  .zz-row:nth-child(3n+1) .zz-thumb .ph { aspect-ratio: 16/10; }
+  .zz-row:nth-child(3n+2) .zz-thumb .ph { aspect-ratio: 1/1; }
+  .zz-row:nth-child(3n+3) .zz-thumb .ph { aspect-ratio: 4/5; }
+  .zz-row:nth-child(3n+3) .zz-thumb { flex-basis: 30%; }
+}
+
+/* --- ABOUT · calmar astat (nota: el min-height:80dvh del .chapter
+       se mantiene — ScrollTrigger lo usa para calcular pins) --- */
+.about-stats .astat:not(:first-child) .astat-num { color: var(--text); }
+
+/* --- PLAY · cap play-title (moment-head sin cambios — .moment-slide
+       vive dentro del stage pinneado; evitamos stacking-context extra) --- */
+.play-title { font-size: clamp(48px, 11vw, 140px); }
+
+/* --- CONTACT · presencia del título + limpieza de efectos --- */
+.cf-title { font-size: clamp(28px, 4vw, 44px); line-height: 1.02; letter-spacing: -0.02em; }
+.cf-card {
+  box-shadow: 0 44px 130px -46px rgba(0,0,0,0.85);   /* quita el inset redundante */
+  border-radius: var(--r-3, 14px);
+}
+.cf-btn { border-radius: var(--r-2, 6px); }
+.cf-btn.ghost { color: var(--text-mid); }
+.cf-btn.ghost:hover { color: var(--page-accent); border-color: var(--page-accent); }
+

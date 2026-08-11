@@ -119,7 +119,7 @@ function ContactForm(){
     setTimeout(() => {
       setSubmit(false);
       setSent(true);
-      toast(tx('✓ Mensaje enviado · te respondo en ~24h','✓ Message sent · I reply in ~24h','✓ 消息已发送 · 我会在约 24 小时内回复'));
+      toast(tx('Mensaje enviado · te respondo en ~24h','Message sent · I reply in ~24h','消息已发送 · 我会在约 24 小时内回复'));
     }, 700);
   };
 
@@ -229,9 +229,9 @@ function Contact({ navigate }){
                  target={s.url.startsWith('http') ? '_blank' : undefined}
                  rel={s.url.startsWith('http') ? 'noopener noreferrer' : undefined}>{s.label}</a>
             ) : (
-              <span key={s.id} className="soon" role="link" aria-disabled="true"
+              <span key={s.id} className="social-soon"
                     title={tx('Próximamente','Coming soon','即将推出')}>
-                {s.label} <em style={{fontStyle:'normal', opacity:0.6}}>· {tx('pronto','soon','即将')}</em>
+                {s.label} <em>· {tx('pronto','soon','即将')}</em>
               </span>
             ))}
           </div>

@@ -7,18 +7,23 @@
 
   /* Texto */
   --text:         #e8e6f0;
-  --text-mid:     #5c5a6e;
-  --text-dim:     #2e2d3d;
+  --text-mid:     #7a7891;   /* WCAG AA on --bg (~5.4:1) — used for body meta / subheads */
+  --text-dim:     #4d4b5f;   /* decorative only (rules, faint glyphs) — do NOT use for readable text */
 
   /* Acentos globales */
-  --accent:       #c4b5fd;   /* lavanda */
-  --warm:         #fbbf7a;   /* ámbar */
-  --cold:         #7dd3fc;   /* hielo */
-  --green:        #4ade80;   /* disponibilidad */
+  --accent:       #eddcb8;   /* parchment (home) — reemplaza lavanda AI-signature */
+  --warm:         #fbbf7a;   /* ámbar (work / contact) */
+  --cold:         #7dd3fc;   /* hielo (about) */
+  --green:        #4ade80;   /* disponibilidad (play) */
 
   /* Por ruta — se sobreescriben en App */
-  --page-accent:  #c4b5fd;
-  --page-glow:    rgba(196,181,253,0.18);
+  --page-accent:  #eddcb8;
+  --page-glow:    rgba(237,220,184,0.16);
+
+  /* ---- Radii scale (formalizada — usar antes de valores libres) ---- */
+  --r-1: 3px;   /* badges, tags, controles pequeños */
+  --r-2: 6px;   /* default — cards, tiles, inputs */
+  --r-3: 14px; /* soft — hero cards, contact glass */
 
   /* Motion */
   --ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
