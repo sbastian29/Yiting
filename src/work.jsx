@@ -1164,13 +1164,15 @@ function ToolFilterSection({ projects }){
   );
 }
 
-/* ---- Closing CTA: suggest heading to the About route ---- */
+/* ---- Closing CTA: suggest heading to the Certifications page (external) ---- */
 function WorkAboutCTA({ navigate }){
   const { lang } = useLang();
   const [hover, setHover] = useState(false);
   const [shown, setShown] = useState(false);
   const ref = useRef(null);
-  const go = (e) => { e.preventDefault(); if (navigate) navigate('about'); };
+  /* Certifications lives outside the SPA — full page load. Let the native
+     href handle nav; no preventDefault, no internal router call. */
+  const go = () => {};
   // Self-contained rise reveal via a scroll check (the shared [data-fx] IO —
   // and a plain IntersectionObserver — don't reliably fire for this lone element
   // after the tall pinned section establishes layout).
@@ -1191,7 +1193,7 @@ function WorkAboutCTA({ navigate }){
   }, []);
   return (
     <div className="work-about-cta" style={{ padding:'clamp(80px,14vh,180px) clamp(20px,6vw,110px) clamp(90px,15vh,170px)' }}>
-      <a ref={ref} href="#about" onClick={go} data-cursor="hover"
+      <a ref={ref} href="certifications.html" onClick={go} data-cursor="hover"
         onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
         style={{
           display:'flex', alignItems:'center', gap:'clamp(18px,3vw,40px)',
@@ -1206,12 +1208,12 @@ function WorkAboutCTA({ navigate }){
         <span className="ph" data-label="portrait" aria-hidden="true"
           style={{ width:'clamp(76px,9vw,104px)', height:'clamp(96px,11vw,132px)', borderRadius:4, flex:'0 0 auto' }}></span>
         <span style={{ display:'flex', flexDirection:'column', gap:9, flex:1, minWidth:0 }}>
-          <span className="mono-tag" style={{ color:WORK_ACCENT, letterSpacing:'0.16em' }}>{lang==='es'?'SIGUIENTE':lang==='zh'?'下一个':'NEXT'} · ABOUT</span>
+          <span className="mono-tag" style={{ color:WORK_ACCENT, letterSpacing:'0.16em' }}>{lang==='es'?'SIGUIENTE':lang==='zh'?'下一个':'NEXT'} · CERTIFICATIONS</span>
           <span style={{ fontFamily:'var(--f-head)', fontWeight:800, fontSize:'clamp(23px,3.2vw,42px)', lineHeight:1.02, letterSpacing:'-0.02em', textWrap:'pretty' }}>
-            {lang==='es'?'Conoce a la persona detrás de las superficies.':lang==='zh'?'认识表面背后的人。':'Meet the person behind the surfaces.'}
+            {lang==='es'?'Las credenciales que respaldan el trabajo.':lang==='zh'?'支撑作品的资历。':'The credentials behind the work.'}
           </span>
           <span style={{ fontFamily:'var(--f-mono)', fontSize:12, letterSpacing:'0.06em', color:'var(--text-mid)' }}>
-            {lang==='es'?'Ir a About':lang==='zh'?'前往关于':'Go to About'} →
+            {lang==='es'?'Ir a Certificaciones':lang==='zh'?'前往认证':'Go to Certifications'} →
           </span>
         </span>
         {/* icon */}

@@ -2,6 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <script>
+    /* Landing redirect: if opened without any hash route, jump to the
+       certifications page (the site's landing surface). Users arriving via
+       #work — from the certifications nav or a bookmark — stay on the SPA. */
+    (function(){ if (!location.hash) location.replace('certifications.html'); })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="format-detection" content="telephone=no">
   <title>Lisa · Yi-Ting Yang Tang — 3D Modeling & Texturing Artist</title>
@@ -57,11 +63,7 @@
   <script type="text/babel" src="src/cursor.jsx"></script>
   <script type="text/babel" src="src/chrome.jsx"></script>
   <script type="text/babel" src="src/sellos.jsx"></script>
-  <script type="text/babel" src="src/home.jsx"></script>
   <script type="text/babel" src="src/work.jsx"></script>
-  <script type="text/babel" src="src/about.jsx"></script>
-  <script type="text/babel" src="src/play.jsx"></script>
-  <script type="text/babel" src="src/contact.jsx"></script>
   <script type="text/babel" src="src/imageflow.jsx"></script>
   <script type="text/babel" src="src/app.jsx"></script>
 </body>

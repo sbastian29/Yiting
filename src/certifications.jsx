@@ -326,12 +326,8 @@ function MetaRow({ k, v }) {
    language as work / about / play / contact. Links to the SPA (index.html#route)
    trigger a full page load — this page lives outside the SPA router. */
 const NAV_LABELS = {
-  home:    'Inicio',
-  about:   'Sobre mí',
-  work:    'Trabajos',
-  play:    'Juego',
-  contact: 'Contacto',
-  certs:   'Certificaciones',
+  work:  'Trabajos',
+  certs: 'Certificaciones',
 };
 
 function SiteNav() {
@@ -341,12 +337,8 @@ function SiteNav() {
   const firstRun = useRef(true);
 
   const items = [
-    { key: 'home',    href: 'index.html#home' },
-    { key: 'about',   href: 'index.html#about' },
-    { key: 'work',    href: 'index.html#work' },
-    { key: 'play',    href: 'index.html#play' },
-    { key: 'contact', href: 'index.html#contact' },
-    { key: 'certs',   href: 'certifications.html', active: true },
+    { key: 'work',  href: 'index.html#work' },
+    { key: 'certs', href: 'certifications.html', active: true },
   ];
 
   useEffect(() => {

@@ -195,8 +195,10 @@ function NavBar({ route, navigate, lang, setLang }){
   const firstRun = useRef(true);
   const t = useT();
 
-  const items = ['home','about','work','play','contact'];
-  const labelFor = (r) => r==='home' ? tr({es:'Inicio',en:'Home',zh:'首页'}, lang) : t('nav.'+r);
+  /* Only Work lives inside the SPA now; Certifications is rendered as an
+     external link below (its own standalone page). */
+  const items = ['work'];
+  const labelFor = (r) => t('nav.'+r);
   const menuWord  = lang==='zh' ? '菜单' : (lang==='es' ? 'Menú' : 'Menu');
   const closeWord = lang==='zh' ? '关闭' : (lang==='es' ? 'Cerrar' : 'Close');
 
@@ -344,7 +346,9 @@ function NavBar({ route, navigate, lang, setLang }){
 
   const cerrar = () => setOpen(false);
   const go = (r) => { pendingRoute.current = r; cerrar(); };
-  const onLogo = (e) => { e.preventDefault(); e.stopPropagation(); if (open) go('home'); else navigate('home'); };
+  /* Logo returns to the landing surface (Certifications, standalone page) —
+     it's a full page load, not a SPA WorldTransition. */
+  const onLogo = (e) => { e.preventDefault(); e.stopPropagation(); window.location.href = 'certifications.html'; };
   const toggleMenu = () => { if (open) pendingRoute.current = null; setOpen(o => !o); };
 
   const hoverIn = (e) => {
@@ -407,7 +411,7 @@ function NavBar({ route, navigate, lang, setLang }){
       {/* floating pill bar — only the menu button toggles now (bar-wide onClick
           fired on incidental taps while trying to scroll on mobile). */}
       <header className={'nav-bar'+(open?' open':'')}>
-        <a className="nav-bar-logo logo-mark" data-cursor="hover" onClick={onLogo} href="#home">
+        <a className="nav-bar-logo logo-mark" data-cursor="hover" onClick={onLogo} href="certifications.html">
           <span className="lm-box">YT</span>
           <span>LISA</span>
         </a>

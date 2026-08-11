@@ -1,7 +1,10 @@
 /* ===================================================================
    app.jsx — router + page-token switcher + curtain + mount
    =================================================================== */
-const ROUTES = ['home','work','about','play','contact'];
+/* Only two surfaces remain: Certifications (standalone at certifications.html —
+   the site's landing) and Work (SPA route below). Home/About/Play/Contact were
+   retired; the SPA lives at index.html only for #work. */
+const ROUTES = ['work'];
 
 const DEFAULT_ROUTE = 'work';
 
@@ -54,7 +57,7 @@ function App(){
     return ()=>window.removeEventListener('hashchange', onHash);
   }, [route]);
 
-  const Page = { home:Home, work:Work, about:About, play:Play, contact:Contact }[route];
+  const Page = { work:Work }[route] || Work;
 
   return (
     <LangContext.Provider value={{ lang, setLang }}>
