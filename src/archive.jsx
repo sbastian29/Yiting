@@ -89,6 +89,16 @@ const CATEGORY_LABEL = {
   weapons:     '3D Weapons',
 };
 
+/* Certificate taxonomy — mirrors CATEGORIES in titulos.jsx, which reads the
+   same data/titulos.json. Kept in sync by hand: these are standalone pages
+   with no shared bundle. */
+const CERT_CATEGORY_LABEL = {
+  premio:         'Premio',
+  beca:           'Beca',
+  certificacion:  'Certificación',
+  reconocimiento: 'Reconocimiento',
+};
+
 /* ---- social links ---- */
 const SOCIALS = [
   { key: 'contacto',   label: 'Contáctame', href: '#arc-contacto',                                            anchor: true },
@@ -440,9 +450,9 @@ function Trayectoria({ items }) {
 
 /* ======================== SIDEBAR: CERTIFICATES =======================
    Reads data/titulos.json — the same file titulos.html uses. Each row is a
-   name plus a SHOW button that opens the scan in a lightbox. Entries with no
-   `image` yet show no button: an entry that can only offer its credential URL
-   falls back to a plain link, and one with neither renders as a bare name. */
+   name plus a SHOW button that opens the full entry in a lightbox. The button
+   is always offered: the overlay carries the metadata too, so it is worth
+   opening before the scans exist. */
 function Certificados({ items, onShow }) {
   if (!items || !items.length) return null;
   return (
@@ -455,13 +465,9 @@ function Certificados({ items, onShow }) {
               {it.title}
               {it.issuer && <span className="arc-cert-issuer">{it.issuer}</span>}
             </span>
-            {it.image
-              ? <button type="button" className="arc-cert-show" data-cursor="hover"
-                        onClick={() => onShow(it)}>Show</button>
-              : it.credentialUrl
-                ? <a className="arc-cert-show" data-cursor="hover" href={it.credentialUrl}
-                     target="_blank" rel="noopener noreferrer">Verificar ↗</a>
-                : null}
+            <button type="button" className="arc-cert-show" data-cursor="hover"
+                    onClick={() => onShow(it)}
+                    aria-label={'Ver ' + it.title}>Show</button>
           </li>
         ))}
       </ul>
@@ -470,15 +476,20 @@ function Certificados({ items, onShow }) {
 }
 
 /* ========================= CERTIFICATE LIGHTBOX ========================
-   Stripped-down sibling of ArcOverlay: just the scan at full size plus a
-   caption. Shares its close plumbing (✕ / backdrop / Escape) and its
-   body-scroll lock. */
+   Same shape as ArcOverlay — scan on the left, metadata panel on the right —
+   so both overlays read as one component. Shares its close plumbing
+   (✕ / backdrop / Escape) and its body-scroll lock.
+
+   Every row in titulos.json is currently a placeholder with no `image`, so the
+   visual falls back to the category label rather than blocking the overlay:
+   the metadata is worth reading before the scans arrive. */
 function CertOverlay({ item, onClose }) {
   const overlayRef = useRef(null);
   const [err, setErr] = useState(false);
   // `image` is already a full relative path, so it only needs escaping —
   // assetUrl() is for the folder + file pairs in works.json.
-  const src = encodeURI(String(item.image));
+  const src = item.image ? encodeURI(String(item.image)) : null;
+  const categoryLabel = CERT_CATEGORY_LABEL[item.category] || item.category;
 
   useEffect(() => { lockBody(); return () => unlockBody(); }, []);
   useEffect(() => pushEsc(onClose), [onClose]);
@@ -496,18 +507,45 @@ function CertOverlay({ item, onClose }) {
   return (
     <div className="arc-overlay arc-cert-overlay" ref={overlayRef} role="dialog"
          aria-modal="true" aria-label={item.title} onClick={onBackdrop}>
-      <button className="arc-ov-close" onClick={onClose} aria-label="Cerrar">
-        <span aria-hidden="true">✕</span>
-      </button>
-      <figure className="arc-cert-figure">
-        {err
-          ? <span className="arc-cert-missing">No se pudo cargar la imagen del certificado.</span>
-          : <img src={src} alt={item.title} draggable="false" onError={() => setErr(true)} />}
-        <figcaption className="arc-cert-caption">
-          <span className="arc-cert-caption-title">{item.title}</span>
-          {item.issuer && <span className="arc-cert-caption-meta">{item.issuer}</span>}
-        </figcaption>
-      </figure>
+      <div className="arc-ov-content">
+        <div className="arc-ov-visual">
+          <div className="arc-ov-visual-inner" data-cert={item.category}>
+            {src && !err
+              ? <img src={src} alt={item.title} draggable="false" onError={() => setErr(true)} />
+              : <span className="arc-ov-visual-label">{categoryLabel}</span>}
+          </div>
+        </div>
+
+        <div className="arc-ov-panel">
+          <button className="arc-ov-close" onClick={onClose} aria-label="Cerrar">
+            <span aria-hidden="true">✕</span>
+          </button>
+
+          <div>
+            <div className="arc-ov-breadcrumb">CERTIFICATES — {categoryLabel}</div>
+            <h2 className="arc-ov-title">{item.title}</h2>
+
+            <div className="arc-ov-meta">
+              <MetaRow k="CATEGORÍA" v={categoryLabel} />
+              <MetaRow k="EMISOR"    v={item.issuer} />
+              <MetaRow k="FECHA"     v={item.date} />
+              <MetaRow k="SKILLS"    v={(item.skills || []).join(' · ')} />
+            </div>
+
+            {item.description && (
+              <p className="arc-ov-cert-desc">{item.description}</p>
+            )}
+          </div>
+
+          <div className="arc-ov-actions">
+            {item.credentialUrl && (
+              <a className="arc-ov-btn" href={item.credentialUrl}
+                 target="_blank" rel="noopener noreferrer">VERIFICAR ↗</a>
+            )}
+            <button className="arc-ov-btn" onClick={onClose}>CERRAR</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
