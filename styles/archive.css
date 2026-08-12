@@ -17,16 +17,29 @@
 
   background: var(--bg);
   color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
+  /* Locked to the viewport: the three columns manage their own scrolling, so
+     the window itself must never grow a scrollbar. Released below 900px, where
+     the layout collapses into one long scrolling column. */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
+
+/* Same reason — kill the window scrollbar this page never uses. Scoped to the
+   pages that actually render .arc-page so titulos.html keeps scrolling. */
+html:has(.arc-page),
+body:has(.arc-page) { overflow: hidden; }
 
 /* Reset a few inheritable base styles that the SPA sets on <body>. Standalone
    pages don't get the SPA's global.css application context. */
 .arc-page,
 .arc-page * { box-sizing: border-box; }
 
-.arc-page button { font: inherit; color: inherit; }
+/* Undo the browser's default button font/colour. Wrapped in :where() so the
+   rule carries zero specificity — as a plain `.arc-page button` it outranked
+   every `.arc-pill` / `.cf-btn` rule below and silently reset them to 16px
+   body text, which is what was clipping the filter pills. */
+:where(.arc-page) :where(button) { font: inherit; color: inherit; }
 
 /* ============================== GRID ================================== */
 .arc-grid {
@@ -84,6 +97,7 @@
 /* Full name is much longer than the old "LISA" wordmark — scale down and
    allow it to wrap rather than overflow the sidebar. */
 .arc-brandword {
+  margin: 0;
   font-family: var(--f-head);
   font-weight: 800;
   font-size: clamp(16px, 1.1vw + 10px, 21px);
@@ -104,22 +118,24 @@
 /* ---- filter pills ---- */
 .arc-filters {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: flex-start;
-  gap: 9px;
+  gap: 8px;
 }
 .arc-pill {
   position: relative;
   height: 32px;
-  padding: 0 16px;
+  padding: 0 13px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: transparent;
   color: var(--text-mid);
   font-family: var(--f-mono);
-  font-size: var(--fs-label);
+  font-size: clamp(9.5px, 0.35vw + 8px, 11px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
   cursor: pointer;
   overflow: hidden;
   transition: color .25s var(--ease-out), border-color .25s var(--ease-out), background .25s var(--ease-out);
@@ -135,58 +151,28 @@
   background: var(--text);
   border-color: var(--text);
 }
+/* The clipping window must match the line box exactly, otherwise the glyphs
+   get cut: without an explicit line-height the spans inherit body's 1.5 and
+   overflow a 1em box. Keep the three values in sync — .arc-pill-b is parked at
+   `inset: 100%`, i.e. one window height below, and the hover slides by that
+   same amount. */
 .arc-pill-flip {
   position: relative;
   display: inline-block;
   overflow: hidden;
-  height: 1em;
+  height: 1.15em;
+  line-height: 1.15;
   vertical-align: middle;
 }
 .arc-pill-a, .arc-pill-b {
   display: block;
+  line-height: 1.15;
   transition: transform .35s var(--ease-out);
 }
 .arc-pill-b { position: absolute; inset: 100% 0 auto 0; }
 .arc-pill:hover .arc-pill-a { transform: translateY(-100%); }
 .arc-pill:hover .arc-pill-b { transform: translateY(-100%); }
 
-/* ---- heading block ---- */
-.arc-heading { display: flex; flex-direction: column; }
-.arc-eyebrow {
-  font-family: var(--f-mono);
-  font-size: var(--fs-label);
-  letter-spacing: var(--ls-eyebrow);
-  text-transform: uppercase;
-  color: var(--text-mid);
-}
-.arc-title {
-  font-family: var(--f-head);
-  font-weight: 800;
-  font-size: clamp(27px, 2.7vw, 42px);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  margin: 14px 0 20px;
-}
-.arc-lead {
-  font-family: var(--f-body);
-  font-weight: 300;
-  font-size: 14px;
-  line-height: 1.6;
-  max-width: 340px;
-  color: var(--text-mid);
-}
-
-/* No longer `margin-top: auto` — the sidebar now overflows and scrolls, so
-   pushing this to the bottom of the flex box would strand it below the form. */
-.arc-status {
-  margin-top: 0;
-  font-family: var(--f-mono);
-  font-size: var(--fs-label);
-  letter-spacing: var(--ls-eyebrow);
-  text-transform: uppercase;
-  color: var(--text-mid);
-}
 
 /* ============================== CENTER ================================ */
 .arc-center-wrap {
@@ -645,6 +631,143 @@
   color: var(--text-mid);
 }
 
+/* ======================= SIDEBAR · CERTIFICATES ======================
+   Same rhythm as the trayectoria list above it: mono label, rows separated by
+   hairlines, name on the left and the control on the right. */
+.arc-cert { display: flex; flex-direction: column; gap: 14px; }
+.arc-cert-label {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+.arc-cert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.arc-cert-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.arc-cert-item:last-child { border-bottom: 1px solid var(--border); }
+.arc-cert-name {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: var(--f-head);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.arc-cert-issuer {
+  font-family: var(--f-mono);
+  font-weight: 400;
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+  color: var(--text-mid);
+}
+.arc-cert-show {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-min);
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-mid);
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .25s var(--ease-out), border-color .25s var(--ease-out), background .25s var(--ease-out);
+}
+.arc-cert-show:hover,
+.arc-cert-show:focus-visible {
+  color: var(--bg);
+  background: var(--page-accent);
+  border-color: var(--page-accent);
+  outline: none;
+}
+
+/* ---- certificate lightbox ---- */
+/* Reuses .arc-overlay for the backdrop, lock and z-index; this only lays the
+   scan out centred and adds the caption. */
+.arc-cert-overlay {
+  display: grid;
+  place-items: center;
+  padding: clamp(56px, 7vw, 88px) clamp(20px, 5vw, 72px);
+}
+/* .arc-ov-close is absolute against the nearest positioned ancestor — here the
+   fixed overlay itself, not a panel. Needs a solid fill to stay legible when
+   the scan sits underneath it. */
+.arc-cert-overlay .arc-ov-close {
+  z-index: 2;
+  background: var(--bg-elevated);
+}
+.arc-cert-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: min(1100px, 100%);
+}
+.arc-cert-figure img {
+  display: block;
+  width: 100%;
+  max-height: 76vh;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+}
+.arc-cert-missing {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+  color: var(--text-mid);
+  text-align: center;
+}
+.arc-cert-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: center;
+}
+.arc-cert-caption-title {
+  font-family: var(--f-head);
+  font-weight: 700;
+  font-size: clamp(15px, 1vw + 11px, 19px);
+  color: var(--text);
+}
+.arc-cert-caption-meta {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+
 /* ======================= SIDEBAR · CONTACT FORM ====================== */
 .arc-form { display: flex; flex-direction: column; gap: 14px; }
 .arc-form-label {
@@ -742,7 +865,7 @@
   font-family: var(--f-mono); font-size: 11px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mid);
 }
-.cf-input, .cf-select {
+.cf-input {
   width: 100%;
   font-family: var(--f-body);
   /* 16px minimum stops iOS Safari zooming the viewport on focus */
@@ -759,14 +882,13 @@
 }
 .cf-input::placeholder { color: var(--text-dim); }
 textarea.cf-input { resize: vertical; min-height: 104px; line-height: 1.6; }
-.cf-field:focus-within .cf-input,
-.cf-field:focus-within .cf-select {
+.cf-field:focus-within .cf-input {
   border-color: var(--page-accent);
   background-color: rgba(6,6,8,0.74);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--page-accent) 18%, transparent),
               0 18px 38px -18px rgba(0,0,0,0.9);
 }
-.cf-field.err .cf-input, .cf-field.err .cf-select { border-color: #ff6b6b; }
+.cf-field.err .cf-input { border-color: #ff6b6b; }
 .cf-error { font-family: var(--f-mono); font-size: 11px; color: #ff8585; letter-spacing: 0.02em; }
 
 /* Submission-level failure banner (network error / Formspree rejection),
@@ -783,17 +905,6 @@ textarea.cf-input { resize: vertical; min-height: 104px; line-height: 1.6; }
   line-height: 1.5;
   color: #ffb3b3;
 }
-
-.cf-select-wrap { position: relative; }
-.cf-select {
-  appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 38px;
-  background-image: linear-gradient(45deg, transparent 50%, var(--text-mid) 50%),
-                    linear-gradient(135deg, var(--text-mid) 50%, transparent 50%);
-  background-position: calc(100% - 20px) 19px, calc(100% - 14px) 19px;
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
-}
-.cf-select option { background: var(--bg-elevated); color: var(--text); }
 
 .cf-submit { transform: translateZ(34px); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
 .cf-btn {
@@ -853,6 +964,15 @@ textarea.cf-input { resize: vertical; min-height: 104px; line-height: 1.6; }
 
 /* =========================== RESPONSIVE ============================== */
 @media (max-width: 900px) {
+  /* Give the viewport lock back: below 900px the page really is one long
+     scrolling column, so the window has to be allowed to scroll again. */
+  html:has(.arc-page),
+  body:has(.arc-page) { overflow: visible; }
+  .arc-page {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
   .arc-grid {
     grid-template-columns: 1fr;
     height: auto;
@@ -868,12 +988,6 @@ textarea.cf-input { resize: vertical; min-height: 104px; line-height: 1.6; }
     overflow: visible;
     min-height: auto;
   }
-  .arc-filters {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .arc-status { margin-top: 4px; }
-
   .arc-center-wrap {
     height: auto;
     overflow: visible;
@@ -885,8 +999,8 @@ textarea.cf-input { resize: vertical; min-height: 104px; line-height: 1.6; }
     padding: 24px;
   }
   .arc-track { transform: none !important; }
-  /* Show only ONE track on mobile (both tracks contain the same doubled list,
-     rendering both would duplicate every card). Hide the right one. */
+  /* Show only ONE track on mobile — the two tracks hold the same cards in a
+     different order, so rendering both would repeat every project. */
   .arc-track-r { display: none; }
 
   .arc-right { display: none; }

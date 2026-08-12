@@ -9,20 +9,23 @@
      [ 34% sidebar (own manual scroll) | 1fr dual-column auto-scroll carousel | 44px labels ]
 
    Sidebar blocks, in order:
-     brand → filter pills → SOFTWARES grid → heading → socials row
-     → TRAYECTORIA → status counter → contact form (#arc-contacto)
+     brand → filter pills → SOFTWARES grid → socials row → TRAYECTORIA
+     → CERTIFICATES → contact form (#arc-contacto)
 
    Interactions:
-     • Carousel auto-scrolls (raf, 0.5px/frame) with wheel-accelerated
-       velocity; pauses on hover / overlay open / <=900px / reduced-motion.
+     • Carousel auto-scrolls (raf, 0.5px/frame). Hover stops the drift; the
+       wheel scrubs it by hand. Frozen while an overlay is open, <=900px or
+       reduced-motion.
      • Sidebar scrolls manually (independent overflow).
      • "Contáctame" is an anchor that smooth-scrolls the sidebar to the form.
      • Card click → overlay with one large hero image + metadata.
+     • Certificate SHOW → lightbox with the scan.
 
    Data:
      data/works.json       → window.WORKS_DATA
      data/softwares.json   → window.SOFTWARES_DATA
      data/trayectoria.json → window.TRAYECTORIA_DATA
+     data/titulos.json     → window.TITULOS_DATA  (shared with titulos.html)
    =================================================================== */
 
 const { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } = React;
@@ -152,10 +155,11 @@ function ArcCard({ work, index, onOpen }) {
 /* ============================== TRACK ================================= */
 /* Dual-column infinite auto-scroll carousel with wheel-accelerated velocity.
    Base speed 0.5 px/frame, wheel adds decaying impulse (×0.94/frame).
-   Uses translate3d on the two tracks; the right track is offset by -60px so
-   the columns feel staggered.
+   Uses translate3d on the two tracks; the right track is offset by -60px and
+   its list is rotated by half, so the columns feel staggered and never show
+   the same card twice at the same height.
 
-   Paused when: overlay open, mouse over carousel, viewport <= 900px, or
+   Auto-drift paused when: overlay open, mouse over carousel, viewport <= 900px, or
    prefers-reduced-motion is on. Track height is measured via ResizeObserver
    so the loop point stays accurate through filter changes and layout shifts.
 */
@@ -167,12 +171,30 @@ function ArcCarousel({ items, paused, onOpen }) {
 
   // Base list must be long enough that the doubled loop looks dense —
   // if the filtered set is tiny (1–2 items), pad it before doubling.
-  const doubled = useMemo(() => {
+  const base = useMemo(() => {
     if (!items.length) return [];
-    let base = items.slice();
-    while (base.length < 6) base = base.concat(items);
-    return base.concat(base);
+    let list = items.slice();
+    while (list.length < 6) list = list.concat(items);
+    return list;
   }, [items]);
+
+  // The right column is the same list rotated, so the two columns never show
+  // the same card side by side. Rotating keeps the same set of cards, so both
+  // tracks stay exactly the same height and the loop point below still holds.
+  //
+  // The offset counts UNIQUE items, not `base` length: padding repeats the
+  // list, making `base` periodic with period items.length, so rotating by half
+  // of `base` can land back on a multiple of the period and change nothing
+  // (5 weapons pad to 10 — a rotation of 5 is a no-op). Any offset strictly
+  // between 0 and items.length avoids that. Below 2 items there is only one
+  // project to show, so the columns necessarily match.
+  const doubledL = useMemo(() => base.concat(base), [base]);
+  const doubledR = useMemo(() => {
+    if (!base.length) return [];
+    const k = Math.ceil(items.length / 2) % base.length;
+    const rot = base.slice(k).concat(base.slice(0, k));
+    return rot.concat(rot);
+  }, [base, items.length]);
 
   useEffect(() => {
     let raf = 0;
@@ -191,8 +213,11 @@ function ArcCarousel({ items, paused, onOpen }) {
     const ro = new ResizeObserver(measure);
     if (leftRef.current) ro.observe(leftRef.current);
 
+    // The wheel scrubs the carousel from anywhere on the page — including while
+    // hovering it, which is exactly where you reach for the wheel. Hover still
+    // kills the automatic drift (targetSpeed = 0); the wheel drives it by hand.
     const onWheel = (e) => {
-      if (paused || hoverRef.current) return;
+      if (paused) return;
       if (window.innerWidth <= 900) return;
       wheelVel += e.deltaY * 0.05;
       const max = 0.5 * 10;
@@ -238,18 +263,18 @@ function ArcCarousel({ items, paused, onOpen }) {
         el.removeEventListener('mouseleave', onLeave);
       }
     };
-  }, [doubled.length, paused]);
+  }, [doubledL.length, paused]);
 
   return (
     <main className="arc-center" ref={carouselRef}>
       <div className="arc-track arc-track-l" ref={leftRef}>
-        {doubled.map((c, i) => (
+        {doubledL.map((c, i) => (
           <ArcCard key={c.id + '-l-' + i} work={c} index={i % Math.max(items.length, 1)}
                    onOpen={() => onOpen(c)} />
         ))}
       </div>
       <div className="arc-track arc-track-r" ref={rightRef}>
-        {doubled.map((c, i) => (
+        {doubledR.map((c, i) => (
           <ArcCard key={c.id + '-r-' + i} work={c} index={i % Math.max(items.length, 1)}
                    onOpen={() => onOpen(c)} />
         ))}
@@ -413,6 +438,80 @@ function Trayectoria({ items }) {
   );
 }
 
+/* ======================== SIDEBAR: CERTIFICATES =======================
+   Reads data/titulos.json — the same file titulos.html uses. Each row is a
+   name plus a SHOW button that opens the scan in a lightbox. Entries with no
+   `image` yet show no button: an entry that can only offer its credential URL
+   falls back to a plain link, and one with neither renders as a bare name. */
+function Certificados({ items, onShow }) {
+  if (!items || !items.length) return null;
+  return (
+    <div className="arc-cert">
+      <span className="arc-cert-label">Certificates</span>
+      <ul className="arc-cert-list">
+        {items.map(it => (
+          <li key={it.id} className="arc-cert-item">
+            <span className="arc-cert-name">
+              {it.title}
+              {it.issuer && <span className="arc-cert-issuer">{it.issuer}</span>}
+            </span>
+            {it.image
+              ? <button type="button" className="arc-cert-show" data-cursor="hover"
+                        onClick={() => onShow(it)}>Show</button>
+              : it.credentialUrl
+                ? <a className="arc-cert-show" data-cursor="hover" href={it.credentialUrl}
+                     target="_blank" rel="noopener noreferrer">Verificar ↗</a>
+                : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* ========================= CERTIFICATE LIGHTBOX ========================
+   Stripped-down sibling of ArcOverlay: just the scan at full size plus a
+   caption. Shares its close plumbing (✕ / backdrop / Escape) and its
+   body-scroll lock. */
+function CertOverlay({ item, onClose }) {
+  const overlayRef = useRef(null);
+  const [err, setErr] = useState(false);
+  // `image` is already a full relative path, so it only needs escaping —
+  // assetUrl() is for the folder + file pairs in works.json.
+  const src = encodeURI(String(item.image));
+
+  useEffect(() => { lockBody(); return () => unlockBody(); }, []);
+  useEffect(() => pushEsc(onClose), [onClose]);
+
+  useLayoutEffect(() => {
+    const g = window.gsap;
+    if (!g || prefersReduce()) return;
+    g.fromTo(overlayRef.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, ease: 'power2.out' });
+  }, []);
+
+  const onBackdrop = (e) => {
+    if (e.target === overlayRef.current) onClose();
+  };
+
+  return (
+    <div className="arc-overlay arc-cert-overlay" ref={overlayRef} role="dialog"
+         aria-modal="true" aria-label={item.title} onClick={onBackdrop}>
+      <button className="arc-ov-close" onClick={onClose} aria-label="Cerrar">
+        <span aria-hidden="true">✕</span>
+      </button>
+      <figure className="arc-cert-figure">
+        {err
+          ? <span className="arc-cert-missing">No se pudo cargar la imagen del certificado.</span>
+          : <img src={src} alt={item.title} draggable="false" onError={() => setErr(true)} />}
+        <figcaption className="arc-cert-caption">
+          <span className="arc-cert-caption-title">{item.title}</span>
+          {item.issuer && <span className="arc-cert-caption-meta">{item.issuer}</span>}
+        </figcaption>
+      </figure>
+    </div>
+  );
+}
+
 /* ========================= SIDEBAR: CONTACT FORM =======================
    Mounts contact.jsx's <ContactForm/> verbatim — tilting glass card,
    depth-layered fields that lift on focus, per-field validation and the
@@ -456,9 +555,10 @@ function SidebarContactForm() {
 /* Floating pill nav — mirrors chrome.jsx so this page shares the same nav
    language as the SPA. Links to the SPA (index.html#route) trigger a full
    page load — this page lives outside the SPA router. */
+/* Everything lives on this one page now — the certificates moved into the
+   sidebar, so the nav no longer points anywhere else. */
 const NAV_LABELS = {
-  work:   'Work',
-  titulos: 'Títulos',
+  work: 'Work',
 };
 
 function SiteNav() {
@@ -468,8 +568,7 @@ function SiteNav() {
   const firstRun = useRef(true);
 
   const items = [
-    { key: 'work',    href: 'index.html', active: true },
-    { key: 'titulos', href: 'titulos.html' },
+    { key: 'work', href: 'index.html', active: true },
   ];
 
   useEffect(() => {
@@ -580,6 +679,7 @@ function WorksPage() {
   const [works] = useState(() => window.WORKS_DATA || []);
   const [softwares] = useState(() => window.SOFTWARES_DATA || []);
   const [trayectoria] = useState(() => window.TRAYECTORIA_DATA || []);
+  const [certificados] = useState(() => window.TITULOS_DATA || []);
 
   /* Name + role come from data/bio.json so there's a single source of truth
      (it already holds first/last/nick and the localized role). */
@@ -590,6 +690,9 @@ function WorksPage() {
   const [filter, setFilter] = useState('all');
   const [overlayWork, setOverlayWork] = useState(null);
   const [overlayIdx, setOverlayIdx] = useState(0);
+  /* The certificate lightbox holds the whole entry, not just the src, so the
+     caption can show the title + issuer alongside the image. */
+  const [certImg, setCertImg] = useState(null);
   const centerRef = useRef(null);
   const isFilterAnimating = useRef(false);
 
@@ -597,8 +700,6 @@ function WorksPage() {
     () => filter === 'all' ? works : works.filter(w => w.category === filter),
     [works, filter]
   );
-
-  const statusText = `ARCHIVE STUDIES(${String(filtered.length).padStart(2, '0')})`;
 
   const changeFilter = useCallback((next) => {
     if (next === filter || isFilterAnimating.current) return;
@@ -641,7 +742,7 @@ function WorksPage() {
             <div className="arc-brand">
               <div className="arc-brandline">
                 <span className="arc-brandmark">YT</span>
-                <span className="arc-brandword">{fullName}</span>
+                <h1 className="arc-brandword">{fullName}</h1>
               </div>
               <p className="arc-brandrole">{role}</p>
             </div>
@@ -658,20 +759,11 @@ function WorksPage() {
 
           <SoftwareGrid items={softwares} />
 
-          <div className="arc-heading">
-            <span className="arc-eyebrow">the archive</span>
-            <h1 className="arc-title">Global<br />Works<br />Archive</h1>
-            <p className="arc-lead">
-              Modelado y texturizado 3D stylised — armas, props y entornos.
-              Filtra por categoría o recorre el archivo completo.
-            </p>
-          </div>
-
           <SocialRow />
 
           <Trayectoria items={trayectoria} />
 
-          <div className="arc-status">{statusText}</div>
+          <Certificados items={certificados} onShow={setCertImg} />
 
           <SidebarContactForm />
         </aside>
@@ -679,7 +771,9 @@ function WorksPage() {
         {/* ------- CENTER: dual-column infinite carousel ------- */}
         <div className="arc-center-wrap" ref={centerRef}>
           {filtered.length > 0 ? (
-            <ArcCarousel items={filtered} paused={overlayWork !== null} onOpen={openWork} />
+            <ArcCarousel items={filtered}
+                         paused={overlayWork !== null || certImg !== null}
+                         onOpen={openWork} />
           ) : (
             <div className="arc-empty">No entries in this category.</div>
           )}
@@ -696,6 +790,10 @@ function WorksPage() {
       {overlayWork && (
         <ArcOverlay work={overlayWork} index={overlayIdx} onClose={closeOverlay} />
       )}
+
+      {certImg && (
+        <CertOverlay item={certImg} onClose={() => setCertImg(null)} />
+      )}
     </div>
   );
 
@@ -711,7 +809,7 @@ function WorksPage() {
 }
 
 /* -------------------------------------------------------------------
-   Bootstrap : load the three data files in parallel, then mount.
+   Bootstrap : load the data files in parallel, then mount.
    ------------------------------------------------------------------- */
 (async function bootstrap() {
   const load = async (url) => {
@@ -724,15 +822,17 @@ function WorksPage() {
       return [];
     }
   };
-  const [works, softwares, trayectoria, bio] = await Promise.all([
+  const [works, softwares, trayectoria, titulos, bio] = await Promise.all([
     load('data/works.json'),
     load('data/softwares.json'),
     load('data/trayectoria.json'),
+    load('data/titulos.json'),
     load('data/bio.json'),
   ]);
   window.WORKS_DATA = works;
   window.SOFTWARES_DATA = softwares;
   window.TRAYECTORIA_DATA = trayectoria;
+  window.TITULOS_DATA = titulos;
   window.BIO_DATA = bio;
   ReactDOM.createRoot(document.getElementById('root')).render(<WorksPage />);
 })();

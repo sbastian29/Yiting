@@ -89,18 +89,11 @@ function ContactForm(){
   const flat = vp.reduceMotion;
   const cardRef = useTilt(tiltEnabled);
 
-  const [form, setForm]         = useState({ name:'', email:'', type:'modeling', message:'' });
+  const [form, setForm]         = useState({ name:'', email:'', subject:'', message:'' });
   const [errors, setErrors]     = useState({});
   const [sent, setSent]         = useState(false);
   const [submitting, setSubmit] = useState(false);
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
-
-  const TYPES = [
-    { v:'modeling',    l:tx('Modelado / Texturizado 3D','3D modeling / texturing','3D 建模 / 贴图') },
-    { v:'virtualprod', l:tx('Producción virtual','Virtual production','虚拟制作') },
-    { v:'collab',      l:tx('Colaboración / freelance','Collaboration / freelance','合作 / 自由职业') },
-    { v:'other',       l:tx('Otro','Other','其他') },
-  ];
 
   const validate = ()=>{
     const er = {};
@@ -121,7 +114,8 @@ function ContactForm(){
 
     setSubmit(true);
     try {
-      const typeLabel = (TYPES.find(t => t.v === form.type) || {}).l || form.type;
+      // The subject is optional, so the mail still needs a readable fallback.
+      const subject = form.subject.trim() || tx('Sin asunto','No subject','无主题');
       const res = await fetch(FORM_ENDPOINT, {
         method: 'POST',
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -130,8 +124,8 @@ function ContactForm(){
           email: form.email.trim(),
           // `_replyto` makes Formspree set the reply-to header to the sender.
           _replyto: form.email.trim(),
-          _subject: `Portfolio — ${typeLabel} — ${form.name.trim()}`,
-          projectType: typeLabel,
+          _subject: `Portfolio — ${subject} — ${form.name.trim()}`,
+          subject,
           message: form.message.trim(),
         }),
       });
@@ -166,7 +160,7 @@ function ContactForm(){
     }
   };
 
-  const reset = ()=>{ setForm({ name:'', email:'', type:'modeling', message:'' }); setErrors({}); setSent(false); setSubmit(false); };
+  const reset = ()=>{ setForm({ name:'', email:'', subject:'', message:'' }); setErrors({}); setSent(false); setSubmit(false); };
 
   return (
     <div className={'cf-stage'+(flat?' flat':'')}>
@@ -197,14 +191,12 @@ function ContactForm(){
             </label>
           </div>
 
-          <label className="cf-field" htmlFor="cf-type">
-            <span className="cf-label">{tx('Tipo de proyecto','Project type','项目类型')}</span>
-            <div className="cf-select-wrap">
-              <select id="cf-type" className="cf-select" data-cursor="hover"
-                      value={form.type} onChange={set('type')}>
-                {TYPES.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-              </select>
-            </div>
+          <label className="cf-field" htmlFor="cf-subject">
+            <span className="cf-label">{tx('Asunto','Subject','主题')}</span>
+            <input id="cf-subject" className="cf-input" data-cursor="text" type="text"
+                   value={form.subject} onChange={set('subject')} inputMode="text"
+                   autoCapitalize="sentences" enterKeyHint="next"
+                   placeholder={tx('¿De qué se trata?','What is it about?','关于什么？')}/>
           </label>
 
           <label className={'cf-field'+(errors.message?' err':'')} htmlFor="cf-msg">
