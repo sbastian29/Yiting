@@ -44,7 +44,7 @@ body:has(.arc-page) { overflow: hidden; }
 /* ============================== GRID ================================== */
 .arc-grid {
   display: grid;
-  grid-template-columns: 34% 1fr 44px;
+  grid-template-columns: 34% 1fr;
   height: 100vh;
   height: 100dvh;
   width: 100%;
@@ -286,29 +286,6 @@ body:has(.arc-page) { overflow: hidden; }
 .arc-card[data-type="weapons"]     { --page-accent: var(--warm); }
 .arc-card[data-type="props"]       { --page-accent: var(--cold); }
 .arc-card[data-type="environment"] { --page-accent: var(--green); }
-
-/* ============================== RIGHT ================================ */
-.arc-right {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  padding: 44px 0;
-  background: var(--bg-elevated);
-  border-left: 1px solid var(--border);
-  z-index: 10;
-}
-.arc-vlabel {
-  font-family: var(--f-mono);
-  font-size: var(--fs-label);
-  font-weight: 400;
-  letter-spacing: var(--ls-eyebrow);
-  text-transform: uppercase;
-  color: var(--text-mid);
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  white-space: nowrap;
-}
 
 /* ============================== EMPTY ================================ */
 .arc-empty {
@@ -708,12 +685,37 @@ body:has(.arc-page) { overflow: hidden; }
 /* Borrows ArcOverlay's whole shell (.arc-ov-*): backdrop, 62/38 split, panel
    and close button. Only the bits specific to certificates live here. */
 
+/* Unlike the project overlay, this one is a floating card rather than a
+   full-bleed takeover — the page stays visible around it. Centred by the
+   backdrop, capped so it never reaches the viewport edges, and allowed to
+   scroll inside itself if a long description outgrows the cap. */
+.arc-cert-overlay {
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 4vw, 56px);
+}
+.arc-cert-overlay .arc-ov-content {
+  min-height: 0;
+  width: min(1040px, 100%);
+  max-height: min(760px, 100%);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9);
+}
+.arc-cert-overlay .arc-ov-visual { padding: clamp(24px, 3vw, 44px); }
+.arc-cert-overlay .arc-ov-panel {
+  padding: clamp(32px, 3vw, 44px) clamp(26px, 2.4vw, 36px);
+  overflow-y: auto;
+}
+
 /* A scan is portrait and much taller than the 4:3 project renders, so the
    frame gets its own ratio rather than letterboxing inside 4:3. */
 .arc-cert-overlay .arc-ov-visual-inner {
   aspect-ratio: auto;
-  max-width: 720px;
-  min-height: min(72vh, 640px);
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 /* Per-category accent on the frame, matching the taxonomy in titulos.css. */
 .arc-ov-visual-inner[data-cert="premio"]         { border-color: color-mix(in oklab, var(--warm) 40%, var(--border)); }
@@ -943,9 +945,13 @@ textarea.cf-input { resize: vertical; min-height: 104px; line-height: 1.6; }
     overflow: visible;
   }
   /* Single column below 900px — the sidebar stops being its own scroll
-     container and just flows with the page. */
+     container and just flows with the page. The horizontal padding follows the
+     safe-area insets because both pages ship viewport-fit=cover, so in
+     landscape on a notched phone the content would otherwise sit under the
+     rounded corner. */
   .arc-left {
-    padding: clamp(80px, 12vw, 100px) 24px 32px;
+    padding: clamp(80px, 12vw, 100px) calc(24px + env(safe-area-inset-right))
+             32px calc(24px + env(safe-area-inset-left));
     border-right: 0;
     border-bottom: 1px solid var(--border);
     gap: 28px;
@@ -960,18 +966,36 @@ textarea.cf-input { resize: vertical; min-height: 104px; line-height: 1.6; }
     height: auto;
     overflow: visible;
     grid-template-columns: 1fr;
-    padding: 24px;
+    padding: 24px calc(24px + env(safe-area-inset-right))
+             calc(24px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
   }
   .arc-track { transform: none !important; }
-  /* Show only ONE track on mobile — the two tracks hold the same cards in a
-     different order, so rendering both would repeat every project. */
+  /* ArcCarousel renders only the left track below 900px; this is the belt to
+     that braces, for the moment between a resize and its debounced re-render. */
   .arc-track-r { display: none; }
 
-  .arc-right { display: none; }
+  /* ---- touch targets ----
+     Only the two controls that fall short of the 44px minimum: .arc-social,
+     .arc-cert-show and .arc-ov-btn already carry it at every width. */
+  .arc-pill,
+  .arc-form-mail {
+    min-height: var(--touch-min);
+    display: inline-flex;
+    align-items: center;
+  }
+  .arc-pill { height: var(--touch-min); padding: 0 18px; }
+  /* break-all mid-word is only tolerable when the address has its own line */
+  .arc-form-mail { word-break: break-word; }
 
   .arc-ov-content {
     grid-template-columns: 1fr;
   }
+  /* Stacked, the certificate card would clip against its desktop height cap —
+     let it grow and scroll the backdrop instead. */
+  .arc-cert-overlay { padding: 16px; place-items: start center; }
+  .arc-cert-overlay .arc-ov-content { max-height: none; }
+  .arc-cert-overlay .arc-ov-panel { overflow-y: visible; }
+  .arc-cert-overlay .arc-ov-visual-inner { height: auto; min-height: 260px; }
   .arc-ov-panel { border-left: 0; border-top: 2px solid var(--page-accent, var(--cold)); }
 
 }

@@ -423,6 +423,21 @@
 .tt-footer-link:hover { color: var(--page-accent); }
 .tt-footer-copy { margin-left: auto; color: var(--text-mid); }
 
+/* =========================== RESPONSIVE ============================== */
+/* The layout is mobile-first (see the min-width: 760px block above), so this
+   only covers what a thumb needs and the notch cut-outs that come with
+   viewport-fit=cover. */
+@media (max-width: 900px) {
+  .tt-main,
+  .tt-footer {
+    padding-left: max(clamp(20px, 5vw, 64px), env(safe-area-inset-left));
+    padding-right: max(clamp(20px, 5vw, 64px), env(safe-area-inset-right));
+  }
+  .tt-footer { padding-bottom: calc(clamp(36px, 5vh, 56px) + env(safe-area-inset-bottom)); }
+  /* Tall enough already — this widens the tap area for the short labels. */
+  .tt-footer-link { padding: 0 6px; margin: 0 -6px; }
+}
+
 /* =========================== REDUCED MOTION ========================== */
 @media (prefers-reduced-motion: reduce) {
   .tt-card, .tt-chip, .tt-reset, .tt-search { transition: none; }

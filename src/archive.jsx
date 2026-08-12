@@ -6,7 +6,7 @@
    and nav are untouched by design.
 
    Layout (>900px):
-     [ 34% sidebar (own manual scroll) | 1fr dual-column auto-scroll carousel | 44px labels ]
+     [ 34% sidebar (own manual scroll) | 1fr dual-column auto-scroll carousel ]
 
    Sidebar blocks, in order:
      brand → filter pills → SOFTWARES grid → socials row → TRAYECTORIA
@@ -179,6 +179,13 @@ function ArcCarousel({ items, paused, onOpen }) {
   const rightRef = useRef(null);
   const hoverRef = useRef(false);
 
+  /* Below 900px the loop is switched off (the tick bails, and CSS hides the
+     second track), so the padding and doubling that make an endless scroll
+     possible would just show every project two or more times. On mobile the
+     carousel degrades to a plain list of exactly what the filter matched. */
+  const vp = useViewport();
+  const isMobile = vp.w <= 900;
+
   // Base list must be long enough that the doubled loop looks dense —
   // if the filtered set is tiny (1–2 items), pad it before doubling.
   const base = useMemo(() => {
@@ -275,20 +282,22 @@ function ArcCarousel({ items, paused, onOpen }) {
     };
   }, [doubledL.length, paused]);
 
+  /* Mobile renders the second track not at all rather than hiding it in CSS:
+     it is half the cards, and this page already pays for in-browser Babel. */
+  const renderTrack = (list, side, ref) => (
+    <div className={'arc-track arc-track-' + side} ref={ref}>
+      {list.map((c, i) => (
+        <ArcCard key={c.id + '-' + side + '-' + i} work={c}
+                 index={i % Math.max(items.length, 1)}
+                 onOpen={() => onOpen(c)} />
+      ))}
+    </div>
+  );
+
   return (
     <main className="arc-center" ref={carouselRef}>
-      <div className="arc-track arc-track-l" ref={leftRef}>
-        {doubledL.map((c, i) => (
-          <ArcCard key={c.id + '-l-' + i} work={c} index={i % Math.max(items.length, 1)}
-                   onOpen={() => onOpen(c)} />
-        ))}
-      </div>
-      <div className="arc-track arc-track-r" ref={rightRef}>
-        {doubledR.map((c, i) => (
-          <ArcCard key={c.id + '-r-' + i} work={c} index={i % Math.max(items.length, 1)}
-                   onOpen={() => onOpen(c)} />
-        ))}
-      </div>
+      {renderTrack(isMobile ? items : doubledL, 'l', leftRef)}
+      {!isMobile && renderTrack(doubledR, 'r', rightRef)}
     </main>
   );
 }
@@ -817,12 +826,6 @@ function WorksPage() {
           )}
         </div>
 
-        {/* ------- RIGHT: vertical labels rail ------- */}
-        <aside className="arc-right">
-          <span className="arc-vlabel">WORK</span>
-          <span className="arc-vlabel">MENU</span>
-          <span className="arc-vlabel">ALL PROJECT ARCHIVES</span>
-        </aside>
       </div>
 
       {overlayWork && (

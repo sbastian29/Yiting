@@ -155,9 +155,17 @@
 /* =========================== RESPONSIVE ============================== */
 @media (max-width: 900px) {
   .arc-nav-item { font-size: clamp(28px, 8vw, 44px); }
+  /* The logo is a link but only as tall as its 28px mark — too small to tap. */
+  .arc-nav-logo { min-height: var(--touch-min); }
+  /* Both pages ship viewport-fit=cover, so keep the floating bar clear of the
+     notch in landscape, and the panel's footer clear of the home indicator. */
+  .arc-nav-bar {
+    max-width: min(720px, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  }
+  .arc-nav-panel { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 480px) {
-  .arc-nav-bar { top: 12px; padding: 8px 12px; gap: 10px; }
+  .arc-nav-bar { top: calc(12px + env(safe-area-inset-top)); padding: 8px 12px; gap: 10px; }
   .arc-nav-center { display: none; }
 }
 
