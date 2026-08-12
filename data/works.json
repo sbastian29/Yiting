@@ -1,0 +1,79 @@
+[
+  {
+    "id": "W01",
+    "title": "3D Stylised Crystal Dagger",
+    "category": "weapons",
+    "folder": "assets/Works/3D Stylised Crystal Dagger",
+    "icon": "Icono.png",
+    "hero": "1.png",
+    "year": "",
+    "software": "",
+    "description": ""
+  },
+  {
+    "id": "W02",
+    "title": "3D Stylised Longsword",
+    "category": "weapons",
+    "folder": "assets/Works/3D Stylised Longsword",
+    "icon": "Icono.png",
+    "hero": "11.png",
+    "year": "",
+    "software": "",
+    "description": ""
+  },
+  {
+    "id": "W03",
+    "title": "3D Stylised Low-Poly Fantasy Crossbow",
+    "category": "weapons",
+    "folder": "assets/Works/3D Stylised Low-Poly Fantasy Crossbow",
+    "icon": "Icono.png",
+    "hero": "18.png",
+    "year": "",
+    "software": "",
+    "description": ""
+  },
+  {
+    "id": "W04",
+    "title": "3D Stylised Scythe",
+    "category": "weapons",
+    "folder": "assets/Works/3D Stylised Scythe",
+    "icon": "Icono.png",
+    "hero": "01.png",
+    "year": "",
+    "software": "",
+    "description": ""
+  },
+  {
+    "id": "W05",
+    "title": "3D Stylised Ice Axe",
+    "category": "weapons",
+    "folder": "assets/Works/3D Stylised Ice Axe",
+    "icon": "Icono.png",
+    "hero": "24.png",
+    "year": "",
+    "software": "",
+    "description": ""
+  },
+  {
+    "id": "W06",
+    "title": "3D Stylised Demon Chest Mimic",
+    "category": "props",
+    "folder": "assets/Works/3D Stylised Demon Chest Mimic",
+    "icon": "Icono.png",
+    "hero": "34.png",
+    "year": "",
+    "software": "",
+    "description": ""
+  },
+  {
+    "id": "W07",
+    "title": "3D Stylised Altar - Environment",
+    "category": "environment",
+    "folder": "assets/Works/3D Stylised Altar - Environment",
+    "icon": "001.png",
+    "hero": "002.png",
+    "year": "",
+    "software": "",
+    "description": ""
+  }
+]

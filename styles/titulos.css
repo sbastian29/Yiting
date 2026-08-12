@@ -1,0 +1,430 @@
+/* ===================================================================
+   titulos.css — credentials grid page.
+
+   Layout mirrors the reference portfolio (header + stats → filters →
+   responsive card grid → footer) but wears Lisa's design system: dark
+   surfaces from tokens.css, Syne headings, DM Sans body, Martian Mono
+   labels, and a per-category accent.
+
+   Nav styles come from nav.css (shared with index.html).
+   =================================================================== */
+
+.tt-page {
+  --page-accent: var(--cold);
+  --page-glow: rgba(125, 211, 252, 0.16);
+  --border: #1f1f2e;
+  --surface: #13131a;
+  --bg-elevated: #0d0d12;
+  --fs-label: clamp(10.5px, 0.4vw + 9px, 12px);
+  --ls-eyebrow: 0.14em;
+
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.tt-page, .tt-page * { box-sizing: border-box; }
+.tt-page button { font: inherit; color: inherit; }
+
+.tt-main {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(110px, 14vh, 170px) clamp(20px, 5vw, 64px) clamp(60px, 8vh, 100px);
+}
+
+/* ============================== HEADER ================================ */
+.tt-header { display: flex; flex-direction: column; margin-bottom: clamp(40px, 6vh, 72px); }
+.tt-eyebrow {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--page-accent);
+}
+.tt-h1 {
+  font-family: var(--f-head);
+  font-weight: 800;
+  font-size: clamp(40px, 7vw + 10px, 96px);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  margin: 14px 0 18px;
+}
+.tt-lede {
+  font-family: var(--f-body);
+  font-weight: 300;
+  font-size: clamp(15px, 0.6vw + 13px, 18px);
+  line-height: 1.6;
+  max-width: 56ch;
+  color: var(--text-mid);
+  margin: 0;
+}
+
+/* ---- stats ---- */
+.tt-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(28px, 5vw, 72px);
+  margin-top: clamp(28px, 4vh, 48px);
+  padding-top: clamp(24px, 3vh, 36px);
+  border-top: 1px solid var(--border);
+}
+.tt-stat { display: flex; flex-direction: column; gap: 6px; }
+.tt-stat-n {
+  font-family: var(--f-head);
+  font-weight: 800;
+  font-size: clamp(30px, 3vw + 14px, 52px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--page-accent);
+}
+.tt-stat-l {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+
+/* ============================== FILTERS =============================== */
+.tt-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: clamp(20px, 3vw, 30px);
+  margin-bottom: clamp(32px, 5vh, 52px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  background: var(--bg-elevated);
+}
+
+/* ---- search ---- */
+.tt-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  transition: border-color .25s var(--ease-out);
+}
+.tt-search:focus-within { border-color: var(--page-accent); }
+.tt-search-ico { width: 18px; height: 18px; flex: 0 0 auto; color: var(--text-mid); }
+.tt-search-input {
+  flex: 1;
+  min-height: var(--touch-min);
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--f-body);
+  font-weight: 300;
+  /* 16px minimum stops iOS Safari zooming the viewport on focus */
+  font-size: 16px;
+  outline: none;
+}
+.tt-search-input::placeholder { color: var(--text-dim); }
+.tt-search-input::-webkit-search-cancel-button { display: none; }
+.tt-search-clear {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--text-mid);
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+.tt-search-clear:hover { color: var(--text); }
+
+/* ---- chip groups ---- */
+.tt-group { display: flex; flex-direction: column; gap: 10px; }
+.tt-group-label {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+.tt-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch-min);
+  padding: 0 15px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-mid);
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .22s var(--ease-out), border-color .22s var(--ease-out), background .22s var(--ease-out);
+}
+.tt-chip-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--chip-accent, var(--text-dim));
+  flex: 0 0 auto;
+  transition: background .22s var(--ease-out);
+}
+.tt-chip:hover { color: var(--text); border-color: var(--text-mid); }
+.tt-chip.is-on {
+  color: var(--text);
+  border-color: var(--chip-accent, var(--page-accent));
+  background: color-mix(in srgb, var(--chip-accent, var(--page-accent)) 12%, transparent);
+}
+.tt-chip.is-on .tt-chip-dot { background: var(--chip-accent, var(--page-accent)); }
+
+/* per-category chip accent */
+.tt-chip[data-category="premio"]         { --chip-accent: var(--warm); }
+.tt-chip[data-category="beca"]           { --chip-accent: var(--accent); }
+.tt-chip[data-category="certificacion"]  { --chip-accent: var(--cold); }
+.tt-chip[data-category="reconocimiento"] { --chip-accent: var(--green); }
+
+/* ---- counter + reset ---- */
+.tt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.tt-counter {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+  color: var(--text-mid);
+}
+.tt-counter strong { color: var(--text); font-weight: 400; }
+.tt-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch-min);
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color .22s var(--ease-out), opacity .22s var(--ease-out);
+}
+.tt-reset svg { width: 14px; height: 14px; }
+.tt-reset:hover:not(:disabled) { border-color: var(--page-accent); color: var(--page-accent); }
+.tt-reset:disabled { opacity: 0.4; cursor: default; }
+
+/* ============================== GRID ================================== */
+.tt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: clamp(16px, 2vw, 24px);
+  align-items: start;
+}
+
+.tt-card {
+  --card-accent: var(--page-accent);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color .3s var(--ease-out), transform .35s var(--ease-out);
+}
+.tt-card:hover { border-color: var(--card-accent); transform: translateY(-3px); }
+
+.tt-card[data-category="premio"]         { --card-accent: var(--warm); }
+.tt-card[data-category="beca"]           { --card-accent: var(--accent); }
+.tt-card[data-category="certificacion"]  { --card-accent: var(--cold); }
+.tt-card[data-category="reconocimiento"] { --card-accent: var(--green); }
+
+/* A featured card spans two columns where there's room for it. */
+@media (min-width: 760px) {
+  .tt-card.is-featured { grid-column: span 2; }
+  .tt-card.is-featured .tt-card-media { aspect-ratio: 21 / 9; }
+}
+
+.tt-card-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.022) 0 10px, transparent 10px 20px),
+    var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.tt-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tt-card-ph {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.tt-card-flag {
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 1;
+  padding: 4px 10px;
+  border-radius: var(--r-1);
+  background: var(--card-accent);
+  color: var(--bg);
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tt-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: clamp(18px, 2vw, 24px);
+  flex: 1;
+}
+.tt-card-badge {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 40%, var(--border));
+  border-radius: var(--r-1);
+  color: var(--card-accent);
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tt-card-title {
+  margin: 0;
+  font-family: var(--f-head);
+  font-weight: 700;
+  font-size: clamp(17px, 1vw + 12px, 21px);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+.tt-card-issuer {
+  margin: 0;
+  font-family: var(--f-body);
+  font-weight: 400;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.tt-card-desc {
+  margin: 0;
+  font-family: var(--f-body);
+  font-weight: 300;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-mid);
+}
+.tt-card-skills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.tt-skill {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-1);
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-mid);
+}
+.tt-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.tt-card-date {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  color: var(--text-mid);
+}
+.tt-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch-min);
+  color: var(--card-accent);
+  text-decoration: none;
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.tt-card-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ============================== EMPTY ================================= */
+.tt-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: clamp(50px, 10vh, 100px) 20px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-3);
+}
+.tt-empty h2 {
+  margin: 0;
+  font-family: var(--f-head);
+  font-weight: 700;
+  font-size: clamp(19px, 1.6vw + 12px, 26px);
+  letter-spacing: -0.01em;
+}
+.tt-empty p {
+  margin: 0;
+  font-family: var(--f-body);
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--text-mid);
+}
+.tt-empty .tt-reset { margin-top: 8px; }
+
+/* ============================== FOOTER ================================ */
+.tt-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(14px, 3vw, 32px);
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(28px, 4vh, 44px) clamp(20px, 5vw, 64px) clamp(36px, 5vh, 56px);
+  border-top: 1px solid var(--border);
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+}
+.tt-footer-link {
+  color: var(--text);
+  text-decoration: none;
+  min-height: var(--touch-min);
+  display: inline-flex;
+  align-items: center;
+}
+.tt-footer-link:hover { color: var(--page-accent); }
+.tt-footer-copy { margin-left: auto; color: var(--text-mid); }
+
+/* =========================== REDUCED MOTION ========================== */
+@media (prefers-reduced-motion: reduce) {
+  .tt-card, .tt-chip, .tt-reset, .tt-search { transition: none; }
+  .tt-card:hover { transform: none; }
+}

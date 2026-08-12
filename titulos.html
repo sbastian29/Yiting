@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="format-detection" content="telephone=no">
-  <title>Works · Yi-Ting Yang Tang</title>
-  <meta name="description" content="3D works archive of Yi-Ting Yang Tang — stylised weapons, props and environments. 3D modeling & texturing artist based in Madrid.">
+  <title>Títulos · Yi-Ting Yang Tang</title>
+  <meta name="description" content="Premios, becas, certificaciones y reconocimientos de Yi-Ting Yang Tang — 3D modeling & texturing artist based in Madrid.">
   <meta name="author" content="Yi-Ting Yang Tang">
   <meta name="theme-color" content="#060608">
 
@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="styles/tokens.css">
   <link rel="stylesheet" href="styles/global.css">
   <link rel="stylesheet" href="styles/nav.css">
-  <link rel="stylesheet" href="styles/archive.css">
+  <link rel="stylesheet" href="styles/titulos.css">
 </head>
 <body>
   <div id="root"></div>
@@ -29,24 +29,16 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
+  <!-- GSAP drives the nav panel's clip-path drop (nav.css + titulos.jsx). -->
   <script src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js" crossorigin="anonymous"></script>
 
-  <!-- Shared library — provides Mouse (read by cursor.jsx), LangContext,
-       ToastProvider, useViewport and ShaderCanvas (the WebGL ambient field
-       behind the contact card). Raw WebGL, no THREE dependency. -->
+  <!-- lib.jsx supplies Mouse (read by cursor.jsx) plus lockBodyScroll. -->
   <script type="text/babel" src="src/lib.jsx"></script>
 
-  <!-- contact.jsx — reused verbatim for its <ContactForm/> (tilting glass
-       card, depth-layered fields, animated success check). Only the form is
-       mounted here; its page-level <Contact/> wrapper is not used. -->
-  <script type="text/babel" src="src/contact.jsx"></script>
-
-  <!-- Custom cursor. global.css hides the native cursor on fine pointers and
-       ships the .cursor-dot/.cursor-ring/.cursor-trail styles, so without this
-       script the page would have no visible pointer at all. -->
+  <!-- global.css hides the native cursor on fine pointers, so the custom one
+       must be mounted or the page would have no visible pointer. -->
   <script type="text/babel" src="src/cursor.jsx"></script>
 
-  <script type="text/babel" src="src/archive.jsx"></script>
+  <script type="text/babel" src="src/titulos.jsx"></script>
 </body>
 </html>

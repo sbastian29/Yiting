@@ -1,0 +1,50 @@
+[
+  {
+    "id": "T01",
+    "title": "PLACEHOLDER · Nombre del premio",
+    "issuer": "PLACEHOLDER · Entidad que lo concede",
+    "date": "2025",
+    "category": "premio",
+    "description": "PLACEHOLDER · Una o dos frases explicando qué es y por qué se concedió.",
+    "skills": ["Modelado 3D", "Texturizado"],
+    "image": "",
+    "credentialUrl": "",
+    "featured": true
+  },
+  {
+    "id": "T02",
+    "title": "PLACEHOLDER · Nombre de la beca",
+    "issuer": "PLACEHOLDER · Fundación / institución",
+    "date": "2024",
+    "category": "beca",
+    "description": "PLACEHOLDER · Una o dos frases explicando qué cubre la beca y a qué dio acceso.",
+    "skills": ["Formación"],
+    "image": "",
+    "credentialUrl": "",
+    "featured": false
+  },
+  {
+    "id": "T03",
+    "title": "PLACEHOLDER · Nombre de la certificación",
+    "issuer": "PLACEHOLDER · Plataforma / escuela",
+    "date": "2024",
+    "category": "certificacion",
+    "description": "PLACEHOLDER · Una o dos frases sobre el contenido del curso y su duración.",
+    "skills": ["Substance Painter", "PBR"],
+    "image": "",
+    "credentialUrl": "",
+    "featured": false
+  },
+  {
+    "id": "T04",
+    "title": "PLACEHOLDER · Nombre del reconocimiento",
+    "issuer": "PLACEHOLDER · Entidad",
+    "date": "2023",
+    "category": "reconocimiento",
+    "description": "PLACEHOLDER · Una o dos frases explicando el reconocimiento.",
+    "skills": ["Trabajo en equipo"],
+    "image": "",
+    "credentialUrl": "",
+    "featured": false
+  }
+]

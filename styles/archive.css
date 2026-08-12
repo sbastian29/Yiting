@@ -40,19 +40,36 @@
 }
 
 /* ============================== LEFT ================================== */
+/* Sidebar scrolls manually and independently of the auto-scrolling carousel.
+   `min-height: 0` is required for a grid item to be allowed to shrink below
+   its content and actually produce a scrollbar. `overscroll-behavior` stops
+   the scroll chaining out to the (non-scrolling) page at either end. */
 .arc-left {
   display: flex;
   flex-direction: column;
-  gap: 40px;
-  padding: clamp(80px, 6vw, 100px) clamp(28px, 4vw, 56px) clamp(32px, 4vw, 56px);
+  gap: 34px;
+  padding: clamp(80px, 6vw, 100px) clamp(28px, 4vw, 56px) clamp(40px, 5vw, 64px);
   border-right: 1px solid var(--border);
   z-index: 10;
   background: var(--bg);
-  overflow: hidden;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
+.arc-left::-webkit-scrollbar { width: 6px; }
+.arc-left::-webkit-scrollbar-track { background: transparent; }
+.arc-left::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+.arc-left::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
 
 .arc-left-top { display: flex; flex-direction: column; gap: 32px; }
 
+.arc-brand { display: flex; flex-direction: column; gap: 10px; }
 .arc-brandline { display: flex; align-items: center; gap: 12px; }
 .arc-brandmark {
   display: grid; place-items: center;
@@ -64,11 +81,24 @@
   font-size: 15px;
   letter-spacing: 0.02em;
 }
+/* Full name is much longer than the old "LISA" wordmark — scale down and
+   allow it to wrap rather than overflow the sidebar. */
 .arc-brandword {
   font-family: var(--f-head);
   font-weight: 800;
-  font-size: 22px;
-  letter-spacing: 0.06em;
+  font-size: clamp(16px, 1.1vw + 10px, 21px);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+}
+.arc-brandrole {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  line-height: 1.5;
+  color: var(--text-mid);
 }
 
 /* ---- filter pills ---- */
@@ -147,8 +177,10 @@
   color: var(--text-mid);
 }
 
+/* No longer `margin-top: auto` — the sidebar now overflows and scrolls, so
+   pushing this to the bottom of the flex box would strand it below the form. */
 .arc-status {
-  margin-top: auto;
+  margin-top: 0;
   font-family: var(--f-mono);
   font-size: var(--fs-label);
   letter-spacing: var(--ls-eyebrow);
@@ -265,10 +297,9 @@
 }
 
 /* Per-type accent tint on the media rail (only when hovered) */
-.arc-card[data-type="universidad"]    { --page-accent: var(--warm); }
-.arc-card[data-type="curso-online"]   { --page-accent: var(--cold); }
-.arc-card[data-type="idioma"]         { --page-accent: var(--green); }
-.arc-card[data-type="reconocimiento"] { --page-accent: var(--accent); }
+.arc-card[data-type="weapons"]     { --page-accent: var(--warm); }
+.arc-card[data-type="props"]       { --page-accent: var(--cold); }
+.arc-card[data-type="environment"] { --page-accent: var(--green); }
 
 /* ============================== RIGHT ================================ */
 .arc-right {
@@ -343,11 +374,12 @@
   display: grid; place-items: center;
   overflow: hidden;
 }
-.arc-ov-visual-inner[data-type="universidad"]    { border-color: color-mix(in oklab, var(--warm) 40%, var(--border)); }
-.arc-ov-visual-inner[data-type="curso-online"]   { border-color: color-mix(in oklab, var(--cold) 40%, var(--border)); }
-.arc-ov-visual-inner[data-type="idioma"]         { border-color: color-mix(in oklab, var(--green) 40%, var(--border)); }
-.arc-ov-visual-inner[data-type="reconocimiento"] { border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); }
-.arc-ov-visual-inner img { width: 100%; height: 100%; object-fit: cover; }
+.arc-ov-visual-inner[data-type="weapons"]     { border-color: color-mix(in oklab, var(--warm) 40%, var(--border)); }
+.arc-ov-visual-inner[data-type="props"]       { border-color: color-mix(in oklab, var(--cold) 40%, var(--border)); }
+.arc-ov-visual-inner[data-type="environment"] { border-color: color-mix(in oklab, var(--green) 40%, var(--border)); }
+/* `contain` (not cover) — the overlay is the one place the full render must
+   be visible uncropped. */
+.arc-ov-visual-inner img { width: 100%; height: 100%; object-fit: contain; }
 .arc-ov-visual-label {
   font-family: var(--f-mono);
   font-size: var(--fs-label);
@@ -492,151 +524,332 @@
 }
 .arc-ov-btn.is-primary:hover { filter: brightness(1.08); }
 
-/* ============================== SITE NAV ============================= */
-.arc-nav-bar {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 10px 18px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: rgba(13, 13, 18, 0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  color: var(--text);
-  max-width: min(720px, calc(100vw - 32px));
-}
-.arc-nav-logo {
-  display: flex; align-items: center; gap: 8px;
-  color: inherit; text-decoration: none;
-  font-family: var(--f-head);
-  font-weight: 800;
-}
-.arc-nav-logo-mark {
-  display: grid; place-items: center;
-  width: 28px; height: 28px;
-  border: 1.5px solid var(--text);
-  border-radius: var(--r-1);
-  font-size: 11px;
-  letter-spacing: 0.02em;
-}
-.arc-nav-logo-word { font-size: 14px; letter-spacing: 0.06em; }
-.arc-nav-center {
-  flex: 1;
+/* Floating pill NavBar lives in styles/nav.css (shared with titulos.html). */
+
+/* ====================== SIDEBAR · SOFTWARES ========================== */
+/* Decorative logo grid. auto-fill keeps the rows tidy as the sidebar width
+   changes; logos are normalised to a common visual weight with a neutral
+   tile behind them (the source PNGs have wildly different padding). */
+.arc-soft { display: flex; flex-direction: column; gap: 14px; }
+.arc-soft-label {
   font-family: var(--f-mono);
-  font-size: 11.5px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
   color: var(--text-mid);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.arc-nav-menu {
-  position: relative;
-  width: 40px; height: 40px;
-  min-width: var(--touch-min);
+.arc-soft-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 8px;
+}
+.arc-soft-cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  background: var(--surface);
+  transition: border-color .25s var(--ease-out), transform .25s var(--ease-out);
+}
+.arc-soft-cell:hover { border-color: var(--page-accent); transform: translateY(-2px); }
+.arc-soft-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ======================== SIDEBAR · SOCIALS ========================== */
+/* Three inline links in a row (wrap on narrow sidebars). */
+.arc-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.arc-social {
+  flex: 1 1 auto;
   min-height: var(--touch-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: transparent;
-  cursor: pointer;
-  display: grid; place-items: center;
-}
-.arc-nav-menu-bar {
-  position: absolute;
-  left: 50%;
-  width: 18px; height: 2px;
-  background: var(--text);
-  border-radius: 1px;
-  transform: translateX(-50%);
-  transition: transform .3s var(--ease-out), opacity .2s var(--ease-out);
-}
-.arc-nav-menu-bar.b1 { top: 14px; }
-.arc-nav-menu-bar.b2 { top: 19px; }
-.arc-nav-menu-bar.b3 { top: 24px; }
-.arc-nav-menu.is-open .b1 { transform: translateX(-50%) translateY(5px) rotate(45deg); }
-.arc-nav-menu.is-open .b2 { opacity: 0; }
-.arc-nav-menu.is-open .b3 { transform: translateX(-50%) translateY(-5px) rotate(-45deg); }
-
-.arc-nav-overlay {
-  position: fixed; inset: 0;
-  z-index: 90;
-  background: rgba(6, 6, 8, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  opacity: 0;
-  pointer-events: none;
-}
-.arc-nav-overlay.open { pointer-events: auto; }
-
-.arc-nav-panel {
-  position: fixed;
-  inset: 0;
-  z-index: 95;
-  background: var(--bg);
-  padding: clamp(80px, 8vw, 120px) clamp(28px, 6vw, 96px) clamp(28px, 4vw, 56px);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  clip-path: inset(0 0 100% 0);
-  pointer-events: none;
-}
-.arc-nav-panel[aria-hidden="false"] { pointer-events: auto; }
-
-.arc-nav-links {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.arc-nav-item {
-  display: flex;
-  align-items: baseline;
-  gap: 24px;
-  padding: 12px 0;
   color: var(--text);
   text-decoration: none;
-  font-family: var(--f-head);
-  font-weight: 700;
-  font-size: clamp(28px, 5vw, 64px);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--border);
-  transition: color .25s var(--ease-out), padding-left .3s var(--ease-out);
-}
-.arc-nav-item:hover { color: var(--page-accent, var(--cold)); padding-left: 12px; }
-.arc-nav-item.is-active { color: var(--page-accent, var(--cold)); }
-.arc-nav-item-idx {
-  font-family: var(--f-mono);
-  font-size: 12px;
-  color: var(--text-mid);
-  letter-spacing: 0.14em;
-  min-width: 32px;
-}
-.arc-nav-item-name { flex: 1; }
-.arc-nav-item-arrow {
-  font-family: var(--f-head);
-  font-size: 32px;
-  color: var(--text-mid);
-  transition: transform .25s var(--ease-out);
-}
-.arc-nav-item:hover .arc-nav-item-arrow { transform: translateX(6px); color: var(--text); }
-
-.arc-nav-foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   font-family: var(--f-mono);
   font-size: var(--fs-label);
-  color: var(--text-mid);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color .25s var(--ease-out), border-color .25s var(--ease-out), background .25s var(--ease-out);
+}
+.arc-social:hover,
+.arc-social:focus-visible {
+  color: var(--bg);
+  background: var(--page-accent);
+  border-color: var(--page-accent);
+  outline: none;
+}
+
+/* ======================= SIDEBAR · TRAYECTORIA ======================= */
+.arc-tray { display: flex; flex-direction: column; gap: 14px; }
+.arc-tray-label {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
   letter-spacing: var(--ls-eyebrow);
   text-transform: uppercase;
+  color: var(--text-mid);
 }
+.arc-tray-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.arc-tray-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.arc-tray-item:last-child { border-bottom: 1px solid var(--border); }
+.arc-tray-name {
+  font-family: var(--f-head);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.arc-tray-year {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  color: var(--page-accent);
+}
+.arc-tray-detail {
+  grid-column: 1 / -1;
+  font-family: var(--f-body);
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-mid);
+}
+
+/* ======================= SIDEBAR · CONTACT FORM ====================== */
+.arc-form { display: flex; flex-direction: column; gap: 14px; }
+.arc-form-label {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+/* The form block is a positioning context so the ambient WebGL field can sit
+   behind the card, bleeding slightly past the sidebar padding. */
+.arc-form { position: relative; }
+.arc-form-bg {
+  position: absolute;
+  inset: -20px -14px -20px -14px;
+  z-index: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  opacity: 0.5;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 40%, #000 35%, transparent 100%);
+          mask-image: radial-gradient(120% 90% at 50% 40%, #000 35%, transparent 100%);
+}
+/* Base shader styles live in pages.css, which this standalone page doesn't
+   load — ported here, minus the framing border. */
+.arc-form-bg .shader-wrap {
+  position: relative;
+  width: 100%; height: 100%;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+}
+.arc-form-bg .shader-canvas {
+  width: 100%; height: 100%;
+  display: block;
+  pointer-events: none;
+}
+.arc-form > .cf-stage,
+.arc-form > .arc-form-label,
+.arc-form > .arc-form-mail,
+.arc-form > .arc-form-fallback { position: relative; z-index: 1; }
+
+.arc-form-fallback {
+  font-family: var(--f-body);
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--text-mid);
+}
+.arc-form-fallback a { color: var(--page-accent); }
+
+/* ---- contact.jsx card, ported from pages.css (.cf-*) ----------------
+   Same rules as the contact route, retuned for a ~420px sidebar: the
+   name/email row stacks, and paddings tighten. */
+.cf-stage { width: 100%; perspective: 1200px; }
+.cf-stage.flat { perspective: none; }
+.cf-card {
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
+  padding: 26px 22px 24px;
+  background: rgba(13, 13, 18, 0.64);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 44px 130px -46px rgba(0,0,0,0.92), inset 0 1px 0 rgba(255,255,255,0.045);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: box-shadow .4s var(--ease-out);
+}
+.cf-form {
+  display: flex; flex-direction: column; gap: 16px;
+  transform-style: preserve-3d;
+  transition: opacity .35s var(--ease-out);
+}
+.cf-card.sent .cf-form { opacity: 0; pointer-events: none; }
+
+.cf-head { transform: translateZ(14px); }
+.cf-title {
+  font-family: var(--f-head); font-weight: 700;
+  font-size: clamp(19px, 1.6vw + 10px, 24px);
+  letter-spacing: -0.01em; line-height: 1.05;
+  margin: 0;
+}
+.cf-sub { font-family: var(--f-body); font-size: 13px; color: var(--text-mid); margin-top: 8px; }
+
+/* One column — 1fr 1fr is unusable at sidebar width. */
+.cf-row { display: grid; grid-template-columns: 1fr; gap: 16px; }
+
+.cf-field {
+  position: relative; display: flex; flex-direction: column; gap: 7px;
+  transform: translateZ(26px);
+  transition: transform .4s var(--ease-out);
+}
+.cf-field:focus-within { transform: translateZ(48px); }
+.cf-label {
+  font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mid);
+}
+.cf-input, .cf-select {
+  width: 100%;
+  font-family: var(--f-body);
+  /* 16px minimum stops iOS Safari zooming the viewport on focus */
+  font-size: 16px;
+  color: var(--text);
+  background-color: rgba(6,6,8,0.6);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px 13px;
+  outline: none;
+  min-height: var(--touch-min);
+  box-shadow: 0 10px 24px -14px rgba(0,0,0,0.9);
+  transition: border-color .25s, box-shadow .25s, background-color .25s;
+}
+.cf-input::placeholder { color: var(--text-dim); }
+textarea.cf-input { resize: vertical; min-height: 104px; line-height: 1.6; }
+.cf-field:focus-within .cf-input,
+.cf-field:focus-within .cf-select {
+  border-color: var(--page-accent);
+  background-color: rgba(6,6,8,0.74);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--page-accent) 18%, transparent),
+              0 18px 38px -18px rgba(0,0,0,0.9);
+}
+.cf-field.err .cf-input, .cf-field.err .cf-select { border-color: #ff6b6b; }
+.cf-error { font-family: var(--f-mono); font-size: 11px; color: #ff8585; letter-spacing: 0.02em; }
+
+/* Submission-level failure banner (network error / Formspree rejection),
+   as opposed to the per-field .cf-error above it. */
+.cf-form-error {
+  transform: translateZ(30px);
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 107, 107, 0.45);
+  border-radius: 9px;
+  background: rgba(255, 107, 107, 0.09);
+  font-family: var(--f-body);
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #ffb3b3;
+}
+
+.cf-select-wrap { position: relative; }
+.cf-select {
+  appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 38px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-mid) 50%),
+                    linear-gradient(135deg, var(--text-mid) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 19px, calc(100% - 14px) 19px;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+.cf-select option { background: var(--bg-elevated); color: var(--text); }
+
+.cf-submit { transform: translateZ(34px); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
+.cf-btn {
+  font-family: var(--f-mono); font-size: 12px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--bg); background: var(--page-accent);
+  border: none; border-radius: 9px; padding: 13px 22px;
+  min-height: var(--touch-min);
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 10px;
+  box-shadow: 0 16px 36px -14px var(--page-glow);
+  transition: transform .22s var(--ease-spring), box-shadow .25s, filter .25s;
+}
+.cf-btn:hover { filter: brightness(1.08); box-shadow: 0 20px 44px -12px var(--page-glow); }
+.cf-btn:active { transform: scale(0.97); }
+.cf-btn.ghost {
+  color: var(--text); background: transparent;
+  border: 1px solid var(--border); box-shadow: none;
+}
+.cf-btn.ghost:hover { border-color: var(--page-accent); color: var(--page-accent); filter: none; }
+
+/* success layer — stays inside the tilted card, crossfades over the form */
+.cf-success {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; text-align: center; padding: 32px 24px;
+  transform: translateZ(42px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .5s var(--ease-out);
+}
+.cf-card.sent .cf-success { opacity: 1; pointer-events: auto; }
+.cf-success .cf-sub { margin-top: 0; }
+.cf-check { width: 60px; height: 60px; }
+.cf-check-c { stroke: var(--page-accent); stroke-width: 2; opacity: 0.4; stroke-dasharray: 145; stroke-dashoffset: 145; }
+.cf-check-p { stroke: var(--page-accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 48; stroke-dashoffset: 48; }
+.cf-card.sent .cf-check-c { animation: cfCheckC .6s var(--ease-out) .1s forwards; }
+.cf-card.sent .cf-check-p { animation: cfCheckP .45s var(--ease-out) .5s forwards; }
+@keyframes cfCheckC { to { stroke-dashoffset: 0; opacity: 0.5; } }
+@keyframes cfCheckP { to { stroke-dashoffset: 0; } }
+
+/* reduced-motion: fully flatten — no perspective, no tilt, no field lift */
+@media (prefers-reduced-motion: reduce) {
+  .cf-stage { perspective: none !important; }
+  .cf-card { transform: none !important; }
+  .cf-field, .cf-head, .cf-submit, .cf-success, .cf-form-error { transform: none !important; transition: none !important; }
+}
+
+.arc-form-mail {
+  font-family: var(--f-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.04em;
+  color: var(--text-mid);
+  text-decoration: none;
+  word-break: break-all;
+}
+.arc-form-mail:hover { color: var(--text); }
 
 /* =========================== RESPONSIVE ============================== */
 @media (max-width: 900px) {
@@ -645,11 +858,15 @@
     height: auto;
     overflow: visible;
   }
+  /* Single column below 900px — the sidebar stops being its own scroll
+     container and just flows with the page. */
   .arc-left {
     padding: clamp(80px, 12vw, 100px) 24px 32px;
     border-right: 0;
     border-bottom: 1px solid var(--border);
     gap: 28px;
+    overflow: visible;
+    min-height: auto;
   }
   .arc-filters {
     flex-direction: row;
@@ -679,16 +896,6 @@
   }
   .arc-ov-panel { border-left: 0; border-top: 2px solid var(--page-accent, var(--cold)); }
 
-  .arc-nav-item { font-size: clamp(28px, 8vw, 44px); }
-}
-
-@media (max-width: 480px) {
-  .arc-nav-bar {
-    top: 12px;
-    padding: 8px 12px;
-    gap: 10px;
-  }
-  .arc-nav-center { display: none; }
 }
 
 /* =========================== REDUCED MOTION ========================== */
@@ -697,6 +904,5 @@
   .arc-center-wrap.is-out .arc-center,
   .arc-center-wrap.is-in  .arc-center { animation: none; }
   .arc-card-media,
-  .arc-nav-item,
   .arc-pill { transition: none; }
 }

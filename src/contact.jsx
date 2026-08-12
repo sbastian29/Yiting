@@ -6,15 +6,20 @@
      3) fields raised as their own depth layer, extra lift + glow on focus
    Submission is a CLIENT-SIDE STUB only — see the TODO in onSubmit.
    =================================================================== */
-const EMAIL = 'lisa.yangtang@gmail.com';
+const EMAIL = 'lisayitingyang@gmail.com';
+
+/* Formspree endpoint that receives the contact form. Posted over AJAX with
+   `Accept: application/json` so the visitor stays on the page instead of
+   being bounced to Formspree's own thank-you screen. */
+const FORM_ENDPOINT = 'https://formspree.io/f/mppadnbb';
 
 /* Social links as DATA — URLs live here, never hardcoded in JSX. Swap a
    `soon` → `live` and drop in the real url to publish a channel. */
 const SOCIALS = [
-  { id:'email',      label:'EMAIL',      url:'mailto:'+EMAIL,  status:'live' },
-  { id:'artstation', label:'ARTSTATION', url:'',               status:'soon' },
-  { id:'linkedin',   label:'LINKEDIN',   url:'',               status:'soon' },
-  { id:'instagram',  label:'INSTAGRAM',  url:'',               status:'soon' },
+  { id:'email',      label:'EMAIL',      url:'mailto:'+EMAIL,                                             status:'live' },
+  { id:'artstation', label:'ARTSTATION', url:'https://www.artstation.com/yinix',                          status:'live' },
+  { id:'linkedin',   label:'LINKEDIN',   url:'https://www.linkedin.com/in/yi-ting-yang-tang-b7ab43278/',  status:'live' },
+  { id:'instagram',  label:'INSTAGRAM',  url:'',                                                          status:'soon' },
 ];
 
 /* ambient background — slow curl/fbm field, low contrast, accent-tinted.
@@ -107,20 +112,58 @@ function ContactForm(){
     return er;
   };
 
-  const onSubmit = (e)=>{
+  const onSubmit = async (e)=>{
     e.preventDefault();
     if (submitting) return;
     const er = validate();
     setErrors(er);
     if (Object.keys(er).length) return;
-    // TODO: wire real submission (mailto/Formspree/EmailJS — decided later)
-    // Placeholder: brief pending state so the button + aria-busy reflect activity.
+
     setSubmit(true);
-    setTimeout(() => {
+    try {
+      const typeLabel = (TYPES.find(t => t.v === form.type) || {}).l || form.type;
+      const res = await fetch(FORM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          // `_replyto` makes Formspree set the reply-to header to the sender.
+          _replyto: form.email.trim(),
+          _subject: `Portfolio — ${typeLabel} — ${form.name.trim()}`,
+          projectType: typeLabel,
+          message: form.message.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        setSubmit(false);
+        setSent(true);
+        toast(tx('Mensaje enviado · te respondo en ~24h','Message sent · I reply in ~24h','消息已发送 · 我会在约 24 小时内回复'));
+        return;
+      }
+
+      // Formspree reports validation problems as { errors: [{ field, message }] }.
+      let detail = '';
+      try {
+        const data = await res.json();
+        if (data && Array.isArray(data.errors) && data.errors.length) {
+          detail = data.errors.map(x => x.message).filter(Boolean).join(' · ');
+        }
+      } catch (_) { /* non-JSON body — fall through to the generic message */ }
       setSubmit(false);
-      setSent(true);
-      toast(tx('Mensaje enviado · te respondo en ~24h','Message sent · I reply in ~24h','消息已发送 · 我会在约 24 小时内回复'));
-    }, 700);
+      setErrors({ form: detail || tx(
+        'No se pudo enviar. Inténtalo de nuevo o escríbeme a ' + EMAIL,
+        'Could not send. Try again or email me at ' + EMAIL,
+        '发送失败。请重试或发邮件至 ' + EMAIL) });
+    } catch (err) {
+      // Network failure / offline / blocked request.
+      setSubmit(false);
+      setErrors({ form: tx(
+        'Sin conexión con el servidor. Escríbeme a ' + EMAIL,
+        'Could not reach the server. Email me at ' + EMAIL,
+        '无法连接服务器。请发邮件至 ' + EMAIL) });
+    }
   };
 
   const reset = ()=>{ setForm({ name:'', email:'', type:'modeling', message:'' }); setErrors({}); setSent(false); setSubmit(false); };
@@ -172,6 +215,12 @@ function ContactForm(){
                       placeholder={tx('Cuéntame en qué estás trabajando…','Tell me what you\u2019re working on…','告诉我你在做什么…')}></textarea>
             {errors.message && <span className="cf-error">{errors.message}</span>}
           </label>
+
+          {/* Submission-level failure (network / Formspree rejection). Field
+              errors render inline above; this one covers the whole POST. */}
+          {errors.form && (
+            <div className="cf-form-error" role="alert">{errors.form}</div>
+          )}
 
           <div className="cf-submit">
             <button type="submit" className={'cf-btn'+(submitting?' is-loading':'')}
@@ -241,4 +290,7 @@ function Contact({ navigate }){
   );
 }
 
-Object.assign(window, { Contact });
+/* ContactForm + AMBIENT_FRAG are exported too so the standalone works page
+   (certifications.html) can mount the same card in its sidebar without
+   pulling in the page-level <Contact/> layout. */
+Object.assign(window, { Contact, ContactForm, AMBIENT_FRAG });

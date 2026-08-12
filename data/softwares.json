@@ -1,0 +1,12 @@
+[
+  { "id": "maya",       "name": "Maya",                 "logo": "assets/logos/autodesk_maya-logo_brandlogos.net_x7aqy.png" },
+  { "id": "zbrush",     "name": "ZBrush",               "logo": "assets/logos/zbrush-logo-png_seeklogo-155828.png" },
+  { "id": "substance",  "name": "Substance 3D Painter", "logo": "assets/logos/adobe-substance-3d-painter-icon.webp" },
+  { "id": "3dcoat",     "name": "3D Coat",              "logo": "assets/logos/3DClogo.thumb.png.627897430d17f81377ab3413167a5394.png" },
+  { "id": "marmoset",   "name": "Marmoset Toolbag",     "logo": "assets/logos/1614765057_toolbag.png" },
+  { "id": "unreal",     "name": "Unreal Engine",        "logo": "assets/logos/unreal-engine-xwo7bd8vu6fzpnkcifgtu.webp" },
+  { "id": "unity",      "name": "Unity",                "logo": "assets/logos/unity-game-engine-icon.webp" },
+  { "id": "photoshop",  "name": "Photoshop",            "logo": "assets/logos/Adobe_Photoshop_CC_icon.svg.png" },
+  { "id": "clipstudio", "name": "Clip Studio Paint",    "logo": "assets/logos/clip_studio_paint_macos_bigsur_icon_189480.png" },
+  { "id": "indesign",   "name": "InDesign",             "logo": "assets/logos/Adobe_InDesign_CC_icon.svg.png" }
+]

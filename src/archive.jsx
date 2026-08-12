@@ -1,22 +1,28 @@
 /* ===================================================================
-   certifications.jsx — Global Certification Archive (standalone page).
+   certifications.jsx — Works / CV archive (standalone page).
+
+   Same UI/UX as the previous Certification Archive — only the CONTENT
+   changed (certificates → 3D works). Layout, carousel, cards, overlay
+   and nav are untouched by design.
 
    Layout (>900px):
-     [ 34% sidebar filters + heading | 1fr dual-column vertical infinite carousel | 44px vertical labels ]
-   Overlay: 62/38 grid with cert visual + metadata + description toggle.
+     [ 34% sidebar (own manual scroll) | 1fr dual-column auto-scroll carousel | 44px labels ]
+
+   Sidebar blocks, in order:
+     brand → filter pills → SOFTWARES grid → heading → socials row
+     → TRAYECTORIA → status counter → contact form (#arc-contacto)
 
    Interactions:
-     • Auto-scrolling dual-track carousel (raf-driven) with wheel-accelerated velocity.
-     • Filter pills: fade-out → filter change → fade-in.
-     • Card click: opens overlay with breadcrumb code, program/emisor/año/validation
-       + collapsible description.
-     • ESC or backdrop closes overlay; body scroll locked while open.
+     • Carousel auto-scrolls (raf, 0.5px/frame) with wheel-accelerated
+       velocity; pauses on hover / overlay open / <=900px / reduced-motion.
+     • Sidebar scrolls manually (independent overflow).
+     • "Contáctame" is an anchor that smooth-scrolls the sidebar to the form.
+     • Card click → overlay with one large hero image + metadata.
 
-   Mobile (<=900px):
-     • Single-column stacked cards, no auto-scroll, right vertical labels hidden.
-
-   Data: fetched once from data/certifications.json → window.CERTS_DATA.
-   Nav: shared site-wide floating pill nav (mirrors chrome.jsx / other pages).
+   Data:
+     data/works.json       → window.WORKS_DATA
+     data/softwares.json   → window.SOFTWARES_DATA
+     data/trayectoria.json → window.TRAYECTORIA_DATA
    =================================================================== */
 
 const { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } = React;
@@ -25,6 +31,13 @@ const prefersReduce = () => {
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
   catch (e) { return false; }
 };
+
+/* Folder names contain spaces — encode when building a URL, but keep the
+   raw path in the JSON so it stays hand-editable. */
+const assetUrl = (folder, file) => encodeURI(String(folder) + '/' + String(file));
+
+/* `Mouse` (read by cursor.jsx) now comes from lib.jsx, which this page loads
+   for ShaderCanvas / LangContext / ToastProvider. No local shim needed. */
 
 /* ---- ref-counted body scroll lock (delegates to lib.jsx if present) ---- */
 let _lockCount = 0;
@@ -60,20 +73,32 @@ if (typeof window !== 'undefined' && !window.__certsEscBound) {
   }, { capture: true });
 }
 
-/* ---- category labels (used in filter pills) ---- */
+/* ---- category filters ---- */
 const FILTERS = [
-  { key: 'all',            label: 'All Work' },
-  { key: 'universidad',    label: 'Universidad' },
-  { key: 'curso-online',   label: 'Curso Online' },
-  { key: 'idioma',         label: 'Idioma' },
-  { key: 'reconocimiento', label: 'Reconocimiento' },
+  { key: 'all',         label: 'All Work' },
+  { key: 'props',       label: '3D Props' },
+  { key: 'environment', label: '3D Environment' },
+  { key: 'weapons',     label: '3D Weapons' },
+];
+const CATEGORY_LABEL = {
+  props:       '3D Props',
+  environment: '3D Environment',
+  weapons:     '3D Weapons',
+};
+
+/* ---- social links ---- */
+const SOCIALS = [
+  { key: 'contacto',   label: 'Contáctame', href: '#arc-contacto',                                            anchor: true },
+  { key: 'artstation', label: 'ArtStation', href: 'https://www.artstation.com/yinix' },
+  { key: 'linkedin',   label: 'LinkedIn',   href: 'https://www.linkedin.com/in/yi-ting-yang-tang-b7ab43278/' },
 ];
 
-/* Deterministic "code" per (issuer, index) — used in card corner + overlay breadcrumb */
-const codeFor = (cert, index) => {
-  const initials = (cert.issuer || '').split(' ')
-    .map(w => w[0]).filter(Boolean).join('').toUpperCase().slice(0, 4) || 'CERT';
-  return `CERT/${initials}_${String(index + 1).padStart(2, '0')}`;
+/* Deterministic code stamp per work — shown on the card corner + overlay. */
+const codeFor = (work, index) => {
+  const initials = String(work.title || '')
+    .replace(/^3D\s+Stylised\s+/i, '')
+    .split(/[\s-]+/).map(w => w[0]).filter(Boolean).join('').toUpperCase().slice(0, 4) || 'WORK';
+  return `WORK/${initials}_${String(index + 1).padStart(2, '0')}`;
 };
 
 /* ============================== PILL ================================== */
@@ -95,28 +120,30 @@ function Pill({ active, onClick, children }) {
 }
 
 /* ============================== CARD ================================== */
-/* 4:3 tile — hatched placeholder (or image when provided) + eyebrow tag +
-   title. Corner code stamp. Data-tag drives color accent per category. */
-function ArcCard({ cert, index, onOpen }) {
-  const code = codeFor(cert, index);
-  const primaryType = (cert.types && cert.types[0]) || 'other';
+/* 4:3 tile — Icono.png (or hatched placeholder if it fails) + category
+   eyebrow + title. Corner code stamp. data-type drives the accent tint. */
+function ArcCard({ work, index, onOpen }) {
+  const [err, setErr] = useState(false);
+  const code = codeFor(work, index);
+  const src = work.icon ? assetUrl(work.folder, work.icon) : null;
   return (
     <button
       type="button"
       className="arc-card"
-      data-type={primaryType}
+      data-type={work.category}
       onClick={onOpen}
-      aria-label={cert.title}
+      aria-label={work.title}
     >
       <div className="arc-card-media">
-        {cert.imageUrl
-          ? <img className="arc-card-img" src={cert.imageUrl} alt="" draggable="false" />
-          : <span className="arc-card-ph">{cert.program}</span>}
+        {src && !err
+          ? <img className="arc-card-img" src={src} alt="" draggable="false"
+                 loading="lazy" onError={() => setErr(true)} />
+          : <span className="arc-card-ph">{CATEGORY_LABEL[work.category] || work.category}</span>}
         <span className="arc-card-code" aria-hidden="true">{code}</span>
       </div>
       <div className="arc-card-body">
-        <span className="arc-card-tag">{cert.date}</span>
-        <h3 className="arc-card-title">{cert.title}</h3>
+        <span className="arc-card-tag">{CATEGORY_LABEL[work.category] || work.category}</span>
+        <h3 className="arc-card-title">{work.title}</h3>
       </div>
     </button>
   );
@@ -217,13 +244,13 @@ function ArcCarousel({ items, paused, onOpen }) {
     <main className="arc-center" ref={carouselRef}>
       <div className="arc-track arc-track-l" ref={leftRef}>
         {doubled.map((c, i) => (
-          <ArcCard key={c.id + '-l-' + i} cert={c} index={i % Math.max(items.length, 1)}
+          <ArcCard key={c.id + '-l-' + i} work={c} index={i % Math.max(items.length, 1)}
                    onOpen={() => onOpen(c)} />
         ))}
       </div>
       <div className="arc-track arc-track-r" ref={rightRef}>
         {doubled.map((c, i) => (
-          <ArcCard key={c.id + '-r-' + i} cert={c} index={i % Math.max(items.length, 1)}
+          <ArcCard key={c.id + '-r-' + i} work={c} index={i % Math.max(items.length, 1)}
                    onOpen={() => onOpen(c)} />
         ))}
       </div>
@@ -232,13 +259,15 @@ function ArcCarousel({ items, paused, onOpen }) {
 }
 
 /* ============================== OVERLAY =============================== */
-/* Modal with slotted metadata: PROGRAMA / EMISOR / AÑO / VALIDACIÓN +
-   description collapsible ("READ MORE" → expands to max-height). ESC or
-   backdrop closes; body scroll locked. */
-function ArcOverlay({ cert, index, onClose }) {
+/* One large hero image on the left, metadata on the right. Rows with no
+   value are omitted, so the placeholder fields in works.json stay hidden
+   until they're filled in. */
+function ArcOverlay({ work, index, onClose }) {
   const overlayRef = useRef(null);
   const [expanded, setExpanded] = useState(false);
-  const code = codeFor(cert, index);
+  const [err, setErr] = useState(false);
+  const code = codeFor(work, index);
+  const src = work.hero ? assetUrl(work.folder, work.hero) : null;
 
   useEffect(() => { lockBody(); return () => unlockBody(); }, []);
   useEffect(() => pushEsc(onClose), [onClose]);
@@ -253,17 +282,17 @@ function ArcOverlay({ cert, index, onClose }) {
     if (e.target === overlayRef.current) onClose();
   };
 
-  const primaryType = (cert.types && cert.types[0]) || 'other';
+  const categoryLabel = CATEGORY_LABEL[work.category] || work.category;
 
   return (
     <div className="arc-overlay" ref={overlayRef} role="dialog" aria-modal="true"
-         aria-label={cert.title} onClick={onBackdrop}>
+         aria-label={work.title} onClick={onBackdrop}>
       <div className="arc-ov-content">
         <div className="arc-ov-visual">
-          <div className="arc-ov-visual-inner" data-type={primaryType}>
-            {cert.imageUrl
-              ? <img src={cert.imageUrl} alt="" draggable="false" />
-              : <span className="arc-ov-visual-label">{cert.program}</span>}
+          <div className="arc-ov-visual-inner" data-type={work.category}>
+            {src && !err
+              ? <img src={src} alt={work.title} draggable="false" onError={() => setErr(true)} />
+              : <span className="arc-ov-visual-label">{categoryLabel}</span>}
           </div>
         </div>
 
@@ -274,36 +303,31 @@ function ArcOverlay({ cert, index, onClose }) {
 
           <div>
             <div className="arc-ov-breadcrumb">WORK — {code}</div>
-            <h2 className="arc-ov-title">{cert.title}</h2>
+            <h2 className="arc-ov-title">{work.title}</h2>
             <div className="arc-ov-code">{code}</div>
 
             <div className="arc-ov-meta">
-              <MetaRow k="PROGRAMA"   v={cert.program} />
-              <MetaRow k="EMISOR"     v={cert.issuer} />
-              <MetaRow k="AÑO"        v={cert.date} />
-              {cert.validation && <MetaRow k="VALIDACIÓN" v={cert.validation} />}
+              <MetaRow k="CATEGORÍA" v={categoryLabel} />
+              <MetaRow k="SOFTWARE"  v={work.software} />
+              <MetaRow k="AÑO"       v={work.year} />
             </div>
 
-            <div className="arc-ov-desc">
-              <button className="arc-ov-desc-toggle"
-                      onClick={() => setExpanded(e => !e)}
-                      aria-expanded={expanded}>
-                <span>READ MORE</span>
-                <span className="arc-ov-desc-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>
-              </button>
-              <div className="arc-ov-desc-body" style={{ maxHeight: expanded ? '400px' : '0px' }}>
-                <p>{cert.description}</p>
+            {work.description && (
+              <div className="arc-ov-desc">
+                <button className="arc-ov-desc-toggle"
+                        onClick={() => setExpanded(e => !e)}
+                        aria-expanded={expanded}>
+                  <span>READ MORE</span>
+                  <span className="arc-ov-desc-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>
+                </button>
+                <div className="arc-ov-desc-body" style={{ maxHeight: expanded ? '400px' : '0px' }}>
+                  <p>{work.description}</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="arc-ov-actions">
-            {cert.credentialUrl && (
-              <a className="arc-ov-btn is-primary"
-                 href={cert.credentialUrl} target="_blank" rel="noopener noreferrer">
-                VERIFICAR CREDENCIAL
-              </a>
-            )}
             <button className="arc-ov-btn" onClick={onClose}>MENU</button>
             <button className="arc-ov-btn" onClick={onClose}>ALL CASE STUDIES</button>
           </div>
@@ -313,6 +337,7 @@ function ArcOverlay({ cert, index, onClose }) {
   );
 }
 function MetaRow({ k, v }) {
+  if (!v) return null;   // placeholder fields stay hidden until filled in
   return (
     <div className="arc-ov-meta-row">
       <div className="arc-ov-meta-k">{k}</div>
@@ -321,13 +346,119 @@ function MetaRow({ k, v }) {
   );
 }
 
+/* ========================= SIDEBAR: SOFTWARES ========================= */
+/* Decorative logo grid — no filtering, tooltip via title/aria-label. */
+function SoftwareGrid({ items }) {
+  if (!items || !items.length) return null;
+  return (
+    <div className="arc-soft">
+      <span className="arc-soft-label">Softwares</span>
+      <ul className="arc-soft-grid">
+        {items.map(s => (
+          <li key={s.id}>
+            <span className="arc-soft-cell" title={s.name}>
+              <img src={s.logo} alt={s.name} loading="lazy" draggable="false" />
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* ========================== SIDEBAR: SOCIALS ========================== */
+/* Three inline links. "Contáctame" is an in-page anchor that scrolls the
+   sidebar down to the form; the other two open in a new tab. */
+function SocialRow() {
+  const goToForm = (e) => {
+    e.preventDefault();
+    const el = document.getElementById('arc-contacto');
+    if (!el) return;
+    el.scrollIntoView({ behavior: prefersReduce() ? 'auto' : 'smooth', block: 'start' });
+    const input = el.querySelector('input, textarea');
+    if (input) setTimeout(() => input.focus({ preventScroll: true }), prefersReduce() ? 0 : 500);
+  };
+  return (
+    <div className="arc-socials">
+      {SOCIALS.map(s => (
+        <a key={s.key}
+           className="arc-social"
+           href={s.href}
+           onClick={s.anchor ? goToForm : undefined}
+           target={s.anchor ? undefined : '_blank'}
+           rel={s.anchor ? undefined : 'noopener noreferrer'}>
+          {s.label}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+/* ======================== SIDEBAR: TRAYECTORIA ======================== */
+function Trayectoria({ items }) {
+  if (!items || !items.length) return null;
+  return (
+    <div className="arc-tray">
+      <span className="arc-tray-label">Trayectoria</span>
+      <ul className="arc-tray-list">
+        {items.map(it => (
+          <li key={it.id} className="arc-tray-item">
+            <span className="arc-tray-name">{it.title}</span>
+            <span className="arc-tray-year">{it.year}</span>
+            {it.detail && <span className="arc-tray-detail">{it.detail}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* ========================= SIDEBAR: CONTACT FORM =======================
+   Mounts contact.jsx's <ContactForm/> verbatim — tilting glass card,
+   depth-layered fields that lift on focus, per-field validation and the
+   animated success check. An ambient WebGL field (the same AMBIENT_FRAG
+   the contact route uses) sits behind it, tinted with the page accent.
+
+   Both come from scripts loaded ahead of this one; we degrade to a plain
+   mailto block if either is missing rather than throwing. */
+function SidebarContactForm() {
+  const Form = window.ContactForm;
+  const Shader = window.ShaderCanvas;
+  const frag = window.AMBIENT_FRAG;
+  const reduce = prefersReduce();
+
+  return (
+    <div className="arc-form" id="arc-contacto">
+      <span className="arc-form-label">Contáctame</span>
+
+      {Shader && frag && (
+        <div className="arc-form-bg" aria-hidden="true">
+          <Shader frag={frag} accent="#7dd3fc" plain frozen={reduce} />
+        </div>
+      )}
+
+      {Form
+        ? <Form />
+        : (
+          <p className="arc-form-fallback">
+            Escríbeme a <a href="mailto:lisayitingyang@gmail.com">lisayitingyang@gmail.com</a>
+          </p>
+        )}
+
+      <a className="arc-form-mail" href="mailto:lisayitingyang@gmail.com">
+        lisayitingyang@gmail.com
+      </a>
+    </div>
+  );
+}
+
 /* ========================== SHARED SITE NAV =========================== */
 /* Floating pill nav — mirrors chrome.jsx so this page shares the same nav
-   language as work / about / play / contact. Links to the SPA (index.html#route)
-   trigger a full page load — this page lives outside the SPA router. */
+   language as the SPA. Links to the SPA (index.html#route) trigger a full
+   page load — this page lives outside the SPA router. */
 const NAV_LABELS = {
-  work:  'Trabajos',
-  certs: 'Certificaciones',
+  work:   'Work',
+  titulos: 'Títulos',
 };
 
 function SiteNav() {
@@ -337,8 +468,8 @@ function SiteNav() {
   const firstRun = useRef(true);
 
   const items = [
-    { key: 'work',  href: 'index.html#work' },
-    { key: 'certs', href: 'certifications.html', active: true },
+    { key: 'work',    href: 'index.html', active: true },
+    { key: 'titulos', href: 'titulos.html' },
   ];
 
   useEffect(() => {
@@ -419,17 +550,17 @@ function SiteNav() {
           ))}
         </nav>
         <div className="arc-nav-foot">
-          <div className="arc-nav-copy">© Lisa 2025</div>
+          <div className="arc-nav-copy">© Yi-Ting Yang Tang 2025</div>
         </div>
       </div>
 
       <header className={'arc-nav-bar' + (open ? ' is-open' : '')}>
         <a className="arc-nav-logo" href="index.html">
           <span className="arc-nav-logo-mark">YT</span>
-          <span className="arc-nav-logo-word">LISA</span>
+          <span className="arc-nav-logo-word">Yi-Ting Yang Tang</span>
         </a>
         <div className="arc-nav-center" aria-hidden="true">
-          // {open ? 'elige tu destino' : 'tú estás en · certificaciones'}
+          // {open ? 'elige tu destino' : 'tú estás en · work'}
         </div>
         <button className={'arc-nav-menu' + (open ? ' is-open' : '')}
                 onClick={toggle}
@@ -445,21 +576,26 @@ function SiteNav() {
 }
 
 /* ============================== PAGE ================================== */
-function CertificationsPage() {
-  const [certs, setCerts] = useState(() => window.CERTS_DATA || []);
+function WorksPage() {
+  const [works] = useState(() => window.WORKS_DATA || []);
+  const [softwares] = useState(() => window.SOFTWARES_DATA || []);
+  const [trayectoria] = useState(() => window.TRAYECTORIA_DATA || []);
+
+  /* Name + role come from data/bio.json so there's a single source of truth
+     (it already holds first/last/nick and the localized role). */
+  const bio = window.BIO_DATA || {};
+  const fullName = [bio.name && bio.name.first, bio.name && bio.name.last]
+    .filter(Boolean).join(' ') || 'Yi-Ting Yang Tang';
+  const role = (bio.role && (bio.role.es || bio.role.en)) || '3D Modeling & Texturing Artist';
   const [filter, setFilter] = useState('all');
-  const [overlayCert, setOverlayCert] = useState(null);
+  const [overlayWork, setOverlayWork] = useState(null);
   const [overlayIdx, setOverlayIdx] = useState(0);
   const centerRef = useRef(null);
   const isFilterAnimating = useRef(false);
 
-  useEffect(() => {
-    if (!certs.length && window.CERTS_DATA) setCerts(window.CERTS_DATA);
-  }, []);
-
   const filtered = useMemo(
-    () => filter === 'all' ? certs : certs.filter(c => (c.types || []).includes(filter)),
-    [certs, filter]
+    () => filter === 'all' ? works : works.filter(w => w.category === filter),
+    [works, filter]
   );
 
   const statusText = `ARCHIVE STUDIES(${String(filtered.length).padStart(2, '0')})`;
@@ -484,26 +620,32 @@ function CertificationsPage() {
     }, 180);
   }, [filter]);
 
-  const openCert = useCallback((cert) => {
-    const idx = certs.indexOf(cert);
-    setOverlayCert(cert);
+  const openWork = useCallback((work) => {
+    const idx = works.indexOf(work);
+    setOverlayWork(work);
     setOverlayIdx(idx >= 0 ? idx : 0);
-  }, [certs]);
-  const closeOverlay = useCallback(() => setOverlayCert(null), []);
+  }, [works]);
+  const closeOverlay = useCallback(() => setOverlayWork(null), []);
 
-  return (
+  const Cursor = window.CustomCursor;
+
+  const page = (
     <div className="arc-page">
+      {Cursor && <Cursor />}
       <SiteNav />
 
       <div className="arc-grid">
-        {/* ------- LEFT: sidebar (nav pills + heading + status) ------- */}
+        {/* ------- LEFT: sidebar — scrolls manually, independent of the carousel ------- */}
         <aside className="arc-left">
           <div className="arc-left-top">
-            <div className="arc-brandline">
-              <span className="arc-brandmark">YT</span>
-              <span className="arc-brandword">LISA</span>
+            <div className="arc-brand">
+              <div className="arc-brandline">
+                <span className="arc-brandmark">YT</span>
+                <span className="arc-brandword">{fullName}</span>
+              </div>
+              <p className="arc-brandrole">{role}</p>
             </div>
-            <nav className="arc-filters" aria-label="Filter certifications">
+            <nav className="arc-filters" aria-label="Filtrar trabajos">
               {FILTERS.map(f => (
                 <Pill key={f.key}
                       active={filter === f.key}
@@ -514,22 +656,30 @@ function CertificationsPage() {
             </nav>
           </div>
 
+          <SoftwareGrid items={softwares} />
+
           <div className="arc-heading">
             <span className="arc-eyebrow">the archive</span>
-            <h1 className="arc-title">Global<br />Certification<br />Archive</h1>
+            <h1 className="arc-title">Global<br />Works<br />Archive</h1>
             <p className="arc-lead">
-              A curation of degrees, specialized courses, and recognitions
-              validating expertise in modern architectural and technical domains.
+              Modelado y texturizado 3D stylised — armas, props y entornos.
+              Filtra por categoría o recorre el archivo completo.
             </p>
           </div>
 
+          <SocialRow />
+
+          <Trayectoria items={trayectoria} />
+
           <div className="arc-status">{statusText}</div>
+
+          <SidebarContactForm />
         </aside>
 
         {/* ------- CENTER: dual-column infinite carousel ------- */}
         <div className="arc-center-wrap" ref={centerRef}>
           {filtered.length > 0 ? (
-            <ArcCarousel items={filtered} paused={overlayCert !== null} onOpen={openCert} />
+            <ArcCarousel items={filtered} paused={overlayWork !== null} onOpen={openWork} />
           ) : (
             <div className="arc-empty">No entries in this category.</div>
           )}
@@ -543,25 +693,46 @@ function CertificationsPage() {
         </aside>
       </div>
 
-      {overlayCert && (
-        <ArcOverlay cert={overlayCert} index={overlayIdx} onClose={closeOverlay} />
+      {overlayWork && (
+        <ArcOverlay work={overlayWork} index={overlayIdx} onClose={closeOverlay} />
       )}
     </div>
   );
+
+  /* ContactForm calls useLang() + useToast(), so it needs both providers
+     above it. They come from lib.jsx; if it ever fails to load we still
+     render the page (the form degrades to its mailto fallback). */
+  const LangCtx = window.LangContext;
+  const Toasts = window.ToastProvider;
+  let tree = page;
+  if (Toasts) tree = <Toasts>{tree}</Toasts>;
+  if (LangCtx) tree = <LangCtx.Provider value={{ lang: 'es', setLang: () => {} }}>{tree}</LangCtx.Provider>;
+  return tree;
 }
 
 /* -------------------------------------------------------------------
-   Bootstrap : load data, then mount. Mirrors the SPA's data-before-render
-   pattern (app.jsx) but scoped to this standalone page.
+   Bootstrap : load the three data files in parallel, then mount.
    ------------------------------------------------------------------- */
 (async function bootstrap() {
-  try {
-    const r = await fetch('data/certifications.json', { cache: 'no-cache' });
-    if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
-    window.CERTS_DATA = await r.json();
-  } catch (e) {
-    console.warn('[certifications] data load failed:', e.message);
-    window.CERTS_DATA = [];
-  }
-  ReactDOM.createRoot(document.getElementById('root')).render(<CertificationsPage />);
+  const load = async (url) => {
+    try {
+      const r = await fetch(url, { cache: 'no-cache' });
+      if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+      return await r.json();
+    } catch (e) {
+      console.warn('[works] data load failed:', url, e.message);
+      return [];
+    }
+  };
+  const [works, softwares, trayectoria, bio] = await Promise.all([
+    load('data/works.json'),
+    load('data/softwares.json'),
+    load('data/trayectoria.json'),
+    load('data/bio.json'),
+  ]);
+  window.WORKS_DATA = works;
+  window.SOFTWARES_DATA = softwares;
+  window.TRAYECTORIA_DATA = trayectoria;
+  window.BIO_DATA = bio;
+  ReactDOM.createRoot(document.getElementById('root')).render(<WorksPage />);
 })();
