@@ -413,8 +413,17 @@ module.exports = async function handler(req, res) {
     const missing = [];
     if (!GMAIL_USER) missing.push('GMAIL_USER');
     if (!GMAIL_PASS) missing.push('GMAIL_APP_PASSWORD');
-    console.error('[contact] faltan variables de entorno:', missing.join(', '));
-    return res.status(500).json({ error: 'server_misconfigured', missing });
+
+    // Qué nombres relacionados existen de verdad en el entorno. Delata el
+    // fallo que el panel de Vercel no deja ver: un nombre con un espacio
+    // colado o una letra de más se guarda como una variable distinta y
+    // parece bien puesta. Solo nombres y longitudes — nunca valores.
+    const present = Object.keys(process.env)
+      .filter(k => /gmail|mail|reply/i.test(k))
+      .map(k => `${JSON.stringify(k)}:${String(process.env[k] || '').length}`);
+
+    console.error('[contact] faltan variables:', missing.join(', '), '| presentes:', present.join(', '));
+    return res.status(500).json({ error: 'server_misconfigured', missing, present });
   }
 
   const ip = header(req.headers['x-forwarded-for']).split(',')[0].trim() || 'unknown';
