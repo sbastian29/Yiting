@@ -8,10 +8,11 @@
    =================================================================== */
 const EMAIL = 'lisayitingyang@gmail.com';
 
-/* Formspree endpoint that receives the contact form. Posted over AJAX with
-   `Accept: application/json` so the visitor stays on the page instead of
-   being bounced to Formspree's own thank-you screen. */
-const FORM_ENDPOINT = 'https://formspree.io/f/mppadnbb';
+/* Serverless function on Vercel (api/contact.js). It sends TWO mails: the
+   notification to Yi-Ting and an acknowledgement to whoever wrote in. Same
+   AJAX contract as before — errors come back as { errors: [{field,message}] },
+   so the three submit paths below are unchanged. */
+const FORM_ENDPOINT = '/api/contact';
 
 /* Social links as DATA — URLs live here, never hardcoded in JSX. Swap a
    `soon` → `live` and drop in the real url to publish a channel. */
@@ -89,7 +90,9 @@ function ContactForm(){
   const flat = vp.reduceMotion;
   const cardRef = useTilt(tiltEnabled);
 
-  const [form, setForm]         = useState({ name:'', email:'', subject:'', message:'' });
+  // `company` is the honeypot: hidden from people, irresistible to bots. The
+  // server treats any value in it as spam and silently drops the submission.
+  const [form, setForm]         = useState({ name:'', email:'', subject:'', message:'', company:'' });
   const [errors, setErrors]     = useState({});
   const [sent, setSent]         = useState(false);
   const [submitting, setSubmit] = useState(false);
@@ -122,11 +125,11 @@ function ContactForm(){
         body: JSON.stringify({
           name: form.name.trim(),
           email: form.email.trim(),
-          // `_replyto` makes Formspree set the reply-to header to the sender.
-          _replyto: form.email.trim(),
-          _subject: `Portfolio — ${subject} — ${form.name.trim()}`,
           subject,
           message: form.message.trim(),
+          // Picks which of the three acknowledgement copies goes out.
+          lang,
+          company: form.company,
         }),
       });
 
@@ -137,7 +140,17 @@ function ContactForm(){
         return;
       }
 
-      // Formspree reports validation problems as { errors: [{ field, message }] }.
+      // Too many submissions from this IP in the last minute.
+      if (res.status === 429) {
+        setSubmit(false);
+        setErrors({ form: tx(
+          'Demasiados envíos seguidos. Espera un minuto e inténtalo de nuevo.',
+          'Too many submissions. Wait a minute and try again.',
+          '发送过于频繁，请稍等一分钟后再试。') });
+        return;
+      }
+
+      // The API reports validation problems as { errors: [{ field, message }] }.
       let detail = '';
       try {
         const data = await res.json();
@@ -160,7 +173,7 @@ function ContactForm(){
     }
   };
 
-  const reset = ()=>{ setForm({ name:'', email:'', subject:'', message:'' }); setErrors({}); setSent(false); setSubmit(false); };
+  const reset = ()=>{ setForm({ name:'', email:'', subject:'', message:'', company:'' }); setErrors({}); setSent(false); setSubmit(false); };
 
   return (
     <div className={'cf-stage'+(flat?' flat':'')}>
@@ -169,6 +182,15 @@ function ContactForm(){
           <div className="cf-head">
             <h2 className="cf-title">{tx('Cuéntame tu proyecto','Tell me about your project','聊聊你的项目')}</h2>
             <p className="cf-sub">{tx('Escríbeme y te respondo en ~24h.','Drop me a line — I reply in ~24h.','给我留言，我会在约 24 小时内回复。')}</p>
+          </div>
+
+          {/* Honeypot. Moved off-screen rather than `display:none` — plenty of
+              bots skip hidden inputs, but they do fill what they can reach.
+              aria-hidden + tabIndex=-1 keep it away from people entirely. */}
+          <div className="cf-hp" aria-hidden="true">
+            <label htmlFor="cf-company">Company</label>
+            <input id="cf-company" name="company" type="text" tabIndex={-1}
+                   autoComplete="off" value={form.company} onChange={set('company')}/>
           </div>
 
           <div className="cf-row">

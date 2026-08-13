@@ -819,6 +819,14 @@ body:has(.arc-page) { overflow: hidden; }
 .cf-sub { font-family: var(--f-body); font-size: 13px; color: var(--text-mid); margin-top: 8px; }
 
 /* One column — 1fr 1fr is unusable at sidebar width. */
+/* Honeypot anti-bots. Fuera de pantalla en vez de `display:none`: muchos bots
+   ignoran lo oculto pero sí rellenan lo que existe en el DOM. No ocupa hueco
+   en el flex del formulario, así que no descuadra el `gap`. */
+.cf-hp {
+  position: absolute; left: -9999px; top: auto;
+  width: 1px; height: 1px; overflow: hidden;
+}
+
 .cf-row { display: grid; grid-template-columns: 1fr; gap: 16px; }
 
 .cf-field {
