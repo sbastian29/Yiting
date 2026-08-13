@@ -11,7 +11,10 @@ Sitio estático **sin build step**. Todo se sirve tal cual desde el directorio r
 - **Babel Standalone** compila los `.jsx` en el navegador (`<script type="text/babel">`).
 - **GSAP 3.12** para animaciones (el nav y los overlays).
 - **WebGL crudo** (sin Three.js) para el shader ambiente del formulario — vive en `lib.jsx`.
-- Sin bundler, sin npm, sin transpilación previa. Los cambios se ven recargando el navegador.
+- Sin bundler y sin transpilación previa. Los cambios se ven recargando el navegador.
+- **El front no usa npm.** El `package.json` de la raíz existe solo para que Vercel instale
+  `nodemailer`, que necesita la función serverless de `api/contact.js`. Su script `build` es un
+  `echo` a propósito: no hay nada que compilar. No metas dependencias de front ahí.
 
 ## Páginas
 
@@ -116,12 +119,32 @@ El Altar es el único sin `Icono.png` — usa `001.png` como miniatura.
 ## Formulario de contacto
 
 Vive en `contact.jsx` (`<ContactForm/>`) y se monta en el sidebar de `index.html`. Envía por AJAX a
-**Formspree**: `https://formspree.io/f/mppadnbb`, con `Accept: application/json` para que el
-visitante no salga de la página. Manda `name`, `email`, `message`, `projectType`, más `_replyto` y
-`_subject`.
+**`/api/contact`**, la función serverless de `api/contact.js`. Manda `name`, `email`, `subject`,
+`message`, el `lang` activo y `company` (el honeypot).
 
-Cubre los tres caminos: éxito (checkmark animado), rechazo de Formspree (pinta sus
-`errors[].message`) y fallo de red (mensaje con el email como alternativa).
+El front cubre cuatro caminos: éxito (checkmark animado), errores de validación del servidor
+(`{ errors: [{ field, message }] }`), rate-limit (429) y fallo de red.
+
+### `api/contact.js`
+
+Por cada envío manda **dos correos**, y esto no es negociable: el aviso a Yi-Ting (con `Reply-To`
+del visitante, para responder de un clic) y un acuse de recibo al visitante en su idioma.
+
+- **Transporte: SMTP de Gmail** vía `nodemailer`, autenticando con una **contraseña de
+  aplicación**. Se eligió frente a Resend/Formspree porque es la única vía gratuita de que el
+  correo salga **desde `lisayitingyang@gmail.com`**: los proveedores externos exigen un dominio
+  verificado por DNS, y Yi-Ting no tiene dominio propio. La dirección del `From` **no se puede
+  cambiar** — Gmail solo envía desde la cuenta autenticada; lo único configurable es el nombre
+  visible (`MAIL_FROM_NAME`).
+- **El aviso a Yi-Ting es el envío crítico**: va primero y, si falla, la API devuelve 502. El
+  acuse de recibo es best-effort — si se cae, el mensaje ya llegó y el visitante no ve un error.
+- Defensas: validación en servidor, honeypot (`company`), rate-limit por IP (5/min, en memoria),
+  escapado de HTML y limpieza de CR/LF en las cabeceras.
+- Las plantillas HTML van con `<table>` y `style=` inline, sin webfonts (Georgia / Arial /
+  Courier New): Gmail borra las hojas de estilo y Outlook renderiza con el motor de Word.
+
+Variables de entorno, en Vercel → Settings → Environment Variables (ver `.env.example`):
+`GMAIL_USER`, `GMAIL_APP_PASSWORD` (obligatorias), `MAIL_TO`, `REPLY_TO`, `MAIL_FROM_NAME`.
 
 Email de contacto: `lisayitingyang@gmail.com`.
 
