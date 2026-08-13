@@ -407,8 +407,14 @@ module.exports = async function handler(req, res) {
   }
 
   if (!GMAIL_USER || !GMAIL_PASS) {
-    console.error('[contact] faltan GMAIL_USER y/o GMAIL_APP_PASSWORD en las variables de entorno');
-    return res.status(500).json({ error: 'server_misconfigured' });
+    // Se devuelve QUÉ variable falta, no su valor: sin esto el 500 es una
+    // caja negra y hay que adivinar entre "no existe", "está vacía" y "no
+    // llegó al despliegue". Los nombres no son secretos; los valores sí.
+    const missing = [];
+    if (!GMAIL_USER) missing.push('GMAIL_USER');
+    if (!GMAIL_PASS) missing.push('GMAIL_APP_PASSWORD');
+    console.error('[contact] faltan variables de entorno:', missing.join(', '));
+    return res.status(500).json({ error: 'server_misconfigured', missing });
   }
 
   const ip = header(req.headers['x-forwarded-for']).split(',')[0].trim() || 'unknown';
