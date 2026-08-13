@@ -13,8 +13,11 @@ Sitio estático **sin build step**. Todo se sirve tal cual desde el directorio r
 - **WebGL crudo** (sin Three.js) para el shader ambiente del formulario — vive en `lib.jsx`.
 - Sin bundler y sin transpilación previa. Los cambios se ven recargando el navegador.
 - **El front no usa npm.** El `package.json` de la raíz existe solo para que Vercel instale
-  `nodemailer`, que necesita la función serverless de `api/contact.js`. Su script `build` es un
-  `echo` a propósito: no hay nada que compilar. No metas dependencias de front ahí.
+  `nodemailer`, que necesita la función serverless de `api/contact.js`. No metas dependencias de
+  front ahí, y **no le añadas un script `build`**: en cuanto existe, Vercel deja de tratar el
+  proyecto como estático, busca una carpeta de salida, no la encuentra y el despliegue falla con
+  `No Output Directory named "public" found`. `vercel.json` fija `outputDirectory: "."` y
+  `buildCommand: null` justamente para dejar eso claro.
 
 ## Páginas
 

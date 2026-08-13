@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "Portfolio de Yi-Ting Yang Tang. El sitio es estatico y no se compila: este package.json existe solo para que Vercel instale la dependencia que necesita la funcion serverless de api/contact.js.",
-  "scripts": {
-    "build": "echo \"Sitio estatico: no hay nada que compilar.\""
-  },
   "dependencies": {
     "nodemailer": "^9.0.5"
   }
