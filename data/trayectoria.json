@@ -1,20 +1,27 @@
 [
   {
-    "id": "T01",
-    "title": "ASDASDASDAS",
-    "year": "2026",
-    "detail": ""
+        "id": "T01",
+        "title": "3D Unreal Virtual Production Operator - Raised by Monsters",
+        "year": "2026",
+        "detail": "Worked as a Technical 3D Artist and Live Virtual Production Operator using Unreal Engine and Pixotope for the television program 'Disfruta Madrid' by Telemadrid.\n\nResponsible for 3D scene maintenance, including asset and material implementation, as well as terrain and foliage creation using Unreal Engine 5.6 Landscape tools.\n\nSet up and animated virtual cameras and scene objects using Level Sequencers, creating Camera Cuts for scene rendering and virtual production workflows.\n\nDeveloped Blueprints to support and integrate virtual production tools between Unreal Engine and Pixotope systems."
   },
-  {
-    "id": "T02",
-    "title": "ASDASDASDAS",
-    "year": "2025",
-    "detail": ""
-  },
-  {
-    "id": "T03",
-    "title": "ASDASDASDAS",
-    "year": "2024",
-    "detail": ""
-  }
+    {
+        "id": "T02",
+        "title": "3D Generalist and Virtual Production Operator - HiVIP",
+        "year": "2024-2025",
+        "detail": "Worked as a 3D Generalist and Virtual Production Operator, specializing in 3D modeling, texturing, Unreal Engine and real-time virtual production workflows.\n\nCreated detailed and optimized 3D models for environments, props and logos, developing realistic textures and materials while ensuring assets were optimized for real-time rendering.\n\nImplemented 3D environments and assets in Unreal Engine for real-time visualization, configuring lighting, materials and shaders.\n\nWorked with Unreal Engine and Aximmetry for virtual production, including Blueprint setup, live compositing and virtual set operation."
+    },
+    {
+        "id": "T03",
+        "title": "(Internship) 3D Props & Environment Artist - HiVIP",
+        "year": "2024",
+        "detail": "Worked as a 3D Artist during a three-month internship focused on 3D asset creation for virtual production Unreal Engine and Aximmetry.\n\nDesigned, modeled and textured a wide range of 3D assets, including props and environments.\n\nImplemented 3D assets and environments, configuring materials and lightning."
+    },
+
+    {
+        "id": "T04",
+        "title": "3D Stylised Props & Texture Artist -  Troodon Studios",
+        "year": "2024",
+        "detail": "Worked as a 3D Stylised Prop Artist for Rookies Indie Game./n/nModeled and textured stylised props, ensuring low-poly count and hand-painted style."
+    }
 ]
