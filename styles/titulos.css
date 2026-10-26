@@ -187,6 +187,7 @@
 .tt-chip[data-category="beca"]           { --chip-accent: var(--accent); }
 .tt-chip[data-category="certificacion"]  { --chip-accent: var(--cold); }
 .tt-chip[data-category="reconocimiento"] { --chip-accent: var(--green); }
+.tt-chip[data-category="voluntariado"]   { --chip-accent: var(--warm); }
 
 /* ---- counter + reset ---- */
 .tt-actions {
@@ -250,6 +251,7 @@
 .tt-card[data-category="beca"]           { --card-accent: var(--accent); }
 .tt-card[data-category="certificacion"]  { --card-accent: var(--cold); }
 .tt-card[data-category="reconocimiento"] { --card-accent: var(--green); }
+.tt-card[data-category="voluntariado"]   { --card-accent: var(--warm); }
 
 /* A featured card spans two columns where there's room for it. */
 @media (min-width: 760px) {
@@ -325,6 +327,7 @@
   color: var(--text);
 }
 .tt-card-desc {
+  white-space: pre-line;
   margin: 0;
   font-family: var(--f-body);
   font-weight: 300;

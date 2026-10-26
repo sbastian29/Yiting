@@ -97,6 +97,7 @@ const CERT_CATEGORY_LABEL = {
   beca:           'Beca',
   certificacion:  'Certificación',
   reconocimiento: 'Reconocimiento',
+  voluntariado:   'Voluntariado',
 };
 
 /* ---- social links ---- */
@@ -472,7 +473,11 @@ function Certificados({ items, onShow }) {
           <li key={it.id} className="arc-cert-item">
             <span className="arc-cert-name">
               {it.title}
-              {it.issuer && <span className="arc-cert-issuer">{it.issuer}</span>}
+              {(it.issuer || it.date) && (
+                <span className="arc-cert-issuer">
+                  {[it.issuer, it.date].filter(Boolean).join(' · ')}
+                </span>
+              )}
             </span>
             <button type="button" className="arc-cert-show" data-cursor="hover"
                     onClick={() => onShow(it)}
@@ -485,8 +490,9 @@ function Certificados({ items, onShow }) {
 }
 
 /* ========================= CERTIFICATE LIGHTBOX ========================
-   Same shape as ArcOverlay — scan on the left, metadata panel on the right —
-   so both overlays read as one component. Shares its close plumbing
+   Reuses ArcOverlay's shell, but stacked: the scan on top and the text
+   below it (Yi-Ting's call — the list row only carries title, issuer and
+   date; everything else waits here). Shares its close plumbing
    (✕ / backdrop / Escape) and its body-scroll lock.
 
    Every row in titulos.json is currently a placeholder with no `image`, so the
@@ -517,6 +523,10 @@ function CertOverlay({ item, onClose }) {
     <div className="arc-overlay arc-cert-overlay" ref={overlayRef} role="dialog"
          aria-modal="true" aria-label={item.title} onClick={onBackdrop}>
       <div className="arc-ov-content">
+        <button className="arc-ov-close" onClick={onClose} aria-label="Cerrar">
+          <span aria-hidden="true">✕</span>
+        </button>
+
         <div className="arc-ov-visual">
           <div className="arc-ov-visual-inner" data-cert={item.category}>
             {src && !err
@@ -526,10 +536,6 @@ function CertOverlay({ item, onClose }) {
         </div>
 
         <div className="arc-ov-panel">
-          <button className="arc-ov-close" onClick={onClose} aria-label="Cerrar">
-            <span aria-hidden="true">✕</span>
-          </button>
-
           <div>
             <div className="arc-ov-breadcrumb">CERTIFICATES — {categoryLabel}</div>
             <h2 className="arc-ov-title">{item.title}</h2>

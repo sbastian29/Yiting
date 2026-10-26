@@ -81,12 +81,13 @@ data/                   # JSON editable — el contenido se toca aquí, no en el
   works.json            # 7 proyectos 3D del carrusel
   softwares.json        # 10 logos del bloque SOFTWARES
   trayectoria.json      # entradas de la trayectoria (placeholders)
-  titulos.json          # premios / becas / certificaciones (placeholders)
+  titulos.json          # premios / becas / certificaciones / voluntariado
   bio.json              # nombre y cargo (fuente única de verdad)
 
 assets/
   Works/                # una carpeta por proyecto (ver abajo)
   logos/                # logos de software
+  certificados/         # escaneos de titulos.json — con el DNI tapado, no subir originales
 ```
 
 ### Orden de carga
@@ -220,8 +221,7 @@ montado solo se ve cargando la página y mirando la consola.
 - **Rendimiento.** Babel transpila ~2500 líneas en cada carga y el cursor mantiene un rAF
   permanente. La extensión de Chrome no consigue ni inyectar un script para hacer capturas, señal
   de que el hilo principal va justo. Precompilar los `.jsx` sería la mejora grande.
-- **Placeholders sin rellenar**: `trayectoria.json` y `titulos.json` están con contenido de relleno
-  marcado, y en `works.json` los campos `year`, `software` y `description` están vacíos.
+- **Placeholders sin rellenar**: `trayectoria.json` está con contenido de relleno marcado, y en `works.json` los campos `year`, `software` y `description` están vacíos.
 
 ## Notas
 

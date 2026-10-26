@@ -28,6 +28,7 @@ const CATEGORIES = [
   { key: 'beca',           label: 'Beca',           accent: 'var(--accent)' },
   { key: 'certificacion',  label: 'Certificación',  accent: 'var(--cold)' },
   { key: 'reconocimiento', label: 'Reconocimiento', accent: 'var(--green)' },
+  { key: 'voluntariado',   label: 'Voluntariado',   accent: 'var(--warm)' },
 ];
 const catLabel = (k) => (CATEGORIES.find(c => c.key === k) || {}).label || k;
 
