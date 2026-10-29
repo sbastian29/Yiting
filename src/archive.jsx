@@ -711,9 +711,6 @@ function SiteNav() {
           <span className="arc-nav-logo-mark">YT</span>
           <span className="arc-nav-logo-word">Yi-Ting Yang Tang</span>
         </a>
-        <div className="arc-nav-center" aria-hidden="true">
-          // {open ? 'elige tu destino' : 'tú estás en · work'}
-        </div>
         <button className={'arc-nav-menu' + (open ? ' is-open' : '')}
                 onClick={toggle}
                 aria-expanded={open}
