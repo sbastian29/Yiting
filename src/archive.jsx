@@ -17,7 +17,7 @@
        wheel scrubs it by hand. Frozen while an overlay is open, <=900px or
        reduced-motion.
      • Sidebar scrolls manually (independent overflow).
-     • "Contáctame" is an anchor that smooth-scrolls the sidebar to the form.
+     • "Contact me" is an anchor that smooth-scrolls the sidebar to the form.
      • Card click → overlay with one large hero image + metadata.
      • Certificate SHOW → lightbox with the scan.
 
@@ -102,7 +102,7 @@ const CERT_CATEGORY_LABEL = {
 
 /* ---- social links ---- */
 const SOCIALS = [
-  { key: 'contacto',   label: 'Contáctame', href: '#arc-contacto',                                            anchor: true },
+  { key: 'contacto',   label: 'Contact me', href: '#arc-contacto',                                            anchor: true },
   { key: 'artstation', label: 'ArtStation', href: 'https://www.artstation.com/yinix' },
   { key: 'linkedin',   label: 'LinkedIn',   href: 'https://www.linkedin.com/in/yi-ting-yang-tang-b7ab43278/' },
 ];
@@ -342,7 +342,7 @@ function ArcOverlay({ work, index, onClose }) {
         </div>
 
         <div className="arc-ov-panel">
-          <button className="arc-ov-close" onClick={onClose} aria-label="Cerrar">
+          <button className="arc-ov-close" onClick={onClose} aria-label="Close">
             <span aria-hidden="true">✕</span>
           </button>
 
@@ -352,7 +352,7 @@ function ArcOverlay({ work, index, onClose }) {
             <div className="arc-ov-code">{code}</div>
 
             <div className="arc-ov-meta">
-              <MetaRow k="CATEGORÍA" v={categoryLabel} />
+              <MetaRow k="CATEGORY" v={categoryLabel} />
               <MetaRow k="SOFTWARE"  v={work.software} />
               <MetaRow k="AÑO"       v={work.year} />
             </div>
@@ -412,7 +412,7 @@ function SoftwareGrid({ items }) {
 }
 
 /* ========================== SIDEBAR: SOCIALS ========================== */
-/* Three inline links. "Contáctame" is an in-page anchor that scrolls the
+/* Three inline links. "Contact me" is an in-page anchor that scrolls the
    sidebar down to the form; the other two open in a new tab. */
 function SocialRow() {
   const goToForm = (e) => {
@@ -444,7 +444,7 @@ function Trayectoria({ items }) {
   if (!items || !items.length) return null;
   return (
     <div className="arc-tray">
-      <span className="arc-tray-label">Trayectoria</span>
+      <span className="arc-tray-label">Experience</span>
       <ul className="arc-tray-list">
         {items.map(it => (
           <li key={it.id} className="arc-tray-item">
@@ -523,7 +523,7 @@ function CertOverlay({ item, onClose }) {
     <div className="arc-overlay arc-cert-overlay" ref={overlayRef} role="dialog"
          aria-modal="true" aria-label={item.title} onClick={onBackdrop}>
       <div className="arc-ov-content">
-        <button className="arc-ov-close" onClick={onClose} aria-label="Cerrar">
+        <button className="arc-ov-close" onClick={onClose} aria-label="Close">
           <span aria-hidden="true">✕</span>
         </button>
 
@@ -541,9 +541,9 @@ function CertOverlay({ item, onClose }) {
             <h2 className="arc-ov-title">{item.title}</h2>
 
             <div className="arc-ov-meta">
-              <MetaRow k="CATEGORÍA" v={categoryLabel} />
-              <MetaRow k="EMISOR"    v={item.issuer} />
-              <MetaRow k="FECHA"     v={item.date} />
+              <MetaRow k="CATEGORY" v={categoryLabel} />
+              <MetaRow k="ISSUER"    v={item.issuer} />
+              <MetaRow k="DATE"      v={item.date} />
               <MetaRow k="SKILLS"    v={(item.skills || []).join(' · ')} />
             </div>
 
@@ -557,7 +557,7 @@ function CertOverlay({ item, onClose }) {
               <a className="arc-ov-btn" href={item.credentialUrl}
                  target="_blank" rel="noopener noreferrer">VERIFICAR ↗</a>
             )}
-            <button className="arc-ov-btn" onClick={onClose}>CERRAR</button>
+            <button className="arc-ov-btn" onClick={onClose}>CLOSE</button>
           </div>
         </div>
       </div>
@@ -581,7 +581,7 @@ function SidebarContactForm() {
 
   return (
     <div className="arc-form" id="arc-contacto">
-      <span className="arc-form-label">Contáctame</span>
+      <span className="arc-form-label">Contact me</span>
 
       {Shader && frag && (
         <div className="arc-form-bg" aria-hidden="true">
@@ -593,7 +593,7 @@ function SidebarContactForm() {
         ? <Form />
         : (
           <p className="arc-form-fallback">
-            Escríbeme a <a href="mailto:lisayitingyang@gmail.com">lisayitingyang@gmail.com</a>
+            Write me at <a href="mailto:lisayitingyang@gmail.com">lisayitingyang@gmail.com</a>
           </p>
         )}
 
@@ -717,7 +717,7 @@ function SiteNav() {
         <button className={'arc-nav-menu' + (open ? ' is-open' : '')}
                 onClick={toggle}
                 aria-expanded={open}
-                aria-label={open ? 'Cerrar menú' : 'Abrir menú'}>
+                aria-label={open ? 'Close menu' : 'Open menu'}>
           <span className="arc-nav-menu-bar b1"></span>
           <span className="arc-nav-menu-bar b2"></span>
           <span className="arc-nav-menu-bar b3"></span>
@@ -851,7 +851,7 @@ function WorksPage() {
   const Toasts = window.ToastProvider;
   let tree = page;
   if (Toasts) tree = <Toasts>{tree}</Toasts>;
-  if (LangCtx) tree = <LangCtx.Provider value={{ lang: 'es', setLang: () => {} }}>{tree}</LangCtx.Provider>;
+  if (LangCtx) tree = <LangCtx.Provider value={{ lang: 'en', setLang: () => {} }}>{tree}</LangCtx.Provider>;
   return tree;
 }
 

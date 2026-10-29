@@ -565,11 +565,12 @@ body:has(.arc-page) { overflow: hidden; }
 /* ======================= SIDEBAR · TRAYECTORIA ======================= */
 .arc-tray { display: flex; flex-direction: column; gap: 14px; }
 .arc-tray-label {
-  font-family: var(--f-mono);
-  font-size: var(--fs-label);
-  letter-spacing: var(--ls-eyebrow);
+  font-family: var(--f-head);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-mid);
+  color: var(--text);
 }
 .arc-tray-list {
   list-style: none;
@@ -614,11 +615,12 @@ body:has(.arc-page) { overflow: hidden; }
    hairlines, name on the left and the control on the right. */
 .arc-cert { display: flex; flex-direction: column; gap: 14px; }
 .arc-cert-label {
-  font-family: var(--f-mono);
-  font-size: var(--fs-label);
-  letter-spacing: var(--ls-eyebrow);
+  font-family: var(--f-head);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-mid);
+  color: var(--text);
 }
 .arc-cert-list {
   list-style: none;
