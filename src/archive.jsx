@@ -600,6 +600,7 @@ function SidebarContactForm() {
       <a className="arc-form-mail" href="mailto:lisayitingyang@gmail.com">
         lisayitingyang@gmail.com
       </a>
+      <a className="arc-form-mail" href="legal.html">Privacy &amp; legal notice</a>
     </div>
   );
 }
@@ -702,7 +703,7 @@ function SiteNav() {
           ))}
         </nav>
         <div className="arc-nav-foot">
-          <div className="arc-nav-copy">© Yi-Ting Yang Tang 2025</div>
+          <div className="arc-nav-copy">© Yi-Ting Yang Tang 2025 · <a href="legal.html" style={{color:'inherit'}}>Privacy</a></div>
         </div>
       </div>
 
@@ -783,6 +784,7 @@ function WorksPage() {
   const page = (
     <div className="arc-page">
       {Cursor && <Cursor />}
+      <a className="skip-link" href="#main">Skip to content</a>
       <SiteNav />
 
       <div className="arc-grid">
@@ -819,7 +821,7 @@ function WorksPage() {
         </aside>
 
         {/* ------- CENTER: dual-column infinite carousel ------- */}
-        <div className="arc-center-wrap" ref={centerRef}>
+        <div className="arc-center-wrap" id="main" tabIndex={-1} ref={centerRef}>
           {filtered.length > 0 ? (
             <ArcCarousel items={filtered}
                          paused={overlayWork !== null || certImg !== null}

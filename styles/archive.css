@@ -1022,3 +1022,7 @@ textarea.cf-input { resize: vertical; min-height: 104px; line-height: 1.6; }
   .arc-card-media,
   .arc-pill { transition: none; }
 }
+
+/* Aviso de privacidad bajo el formulario */
+.cf-consent { margin: 0; font-size: var(--fs-caption); color: var(--text-mid); }
+.cf-consent a { color: var(--text); text-underline-offset: 3px; }

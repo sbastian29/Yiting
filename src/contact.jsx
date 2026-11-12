@@ -236,6 +236,11 @@ function ContactForm(){
             <div className="cf-form-error" role="alert">{errors.form}</div>
           )}
 
+          <p className="cf-consent">
+            {tx('Uso tu nombre y email solo para responderte. ','I use your name and email only to reply. ','我只会用你的姓名和邮箱来回复你。')}
+            <a href="legal.html" target="_blank" rel="noopener">{tx('Privacidad','Privacy','隐私')}</a>
+          </p>
+
           <div className="cf-submit">
             <button type="submit" className={'cf-btn'+(submitting?' is-loading':'')}
                     data-cursor="hover"

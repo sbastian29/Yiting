@@ -343,6 +343,7 @@ function TitulosPage() {
         <a className="tt-footer-link" href="index.html">Work</a>
         <a className="tt-footer-link" href="titulos.html">Títulos</a>
         <a className="tt-footer-link" href="mailto:lisayitingyang@gmail.com">Contacto</a>
+        <a className="tt-footer-link" href="legal.html">Privacidad</a>
         <span className="tt-footer-copy">© Yi-Ting Yang Tang 2025</span>
       </footer>
     </div>
