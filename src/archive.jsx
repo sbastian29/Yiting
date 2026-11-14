@@ -605,126 +605,6 @@ function SidebarContactForm() {
   );
 }
 
-/* ========================== SHARED SITE NAV =========================== */
-/* Floating pill nav — mirrors chrome.jsx so this page shares the same nav
-   language as the SPA. Links to the SPA (index.html#route) trigger a full
-   page load — this page lives outside the SPA router. */
-/* Everything lives on this one page now — the certificates moved into the
-   sidebar, so the nav no longer points anywhere else. */
-const NAV_LABELS = {
-  work: 'Work',
-};
-
-function SiteNav() {
-  const [open, setOpen] = useState(false);
-  const overlayRef = useRef(null);
-  const panelRef = useRef(null);
-  const firstRun = useRef(true);
-
-  const items = [
-    { key: 'work', href: 'index.html', active: true },
-  ];
-
-  useEffect(() => {
-    const overlay = overlayRef.current, panel = panelRef.current;
-    if (!overlay || !panel) return;
-    const g = window.gsap;
-    const reduce = prefersReduce();
-    const linkEls = Array.from(panel.querySelectorAll('.arc-nav-item'));
-    const foot = panel.querySelector('.arc-nav-foot');
-
-    if (firstRun.current) {
-      firstRun.current = false;
-      if (g) {
-        g.set(overlay, { autoAlpha: 0 });
-        g.set(panel, { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 });
-      }
-      return;
-    }
-
-    if (open) {
-      lockBody();
-      if (!g || reduce) {
-        if (g) {
-          g.set(overlay, { autoAlpha: 1 });
-          g.set(panel, { clipPath: 'inset(0 0 0% 0)' });
-          g.set(linkEls, { y: 0, autoAlpha: 1 });
-          if (foot) g.set(foot, { autoAlpha: 1 });
-        }
-        return;
-      }
-      g.killTweensOf([overlay, panel, ...linkEls, foot]);
-      g.to(overlay, { autoAlpha: 1, duration: 0.3 });
-      g.fromTo(panel,
-        { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 },
-        { clipPath: 'inset(0 0 0% 0)', duration: 0.45, ease: 'power3.out' });
-      g.fromTo(linkEls,
-        { y: 16, autoAlpha: 0 },
-        { y: 0, autoAlpha: 1, stagger: 0.06, duration: 0.35, ease: 'power2.out', delay: 0.2 });
-      if (foot) g.fromTo(foot, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, delay: 0.55 });
-    } else {
-      unlockBody();
-      if (!g || reduce) {
-        if (g) {
-          g.set(overlay, { autoAlpha: 0 });
-          g.set(panel, { clipPath: 'inset(0 0 100% 0)' });
-        }
-        return;
-      }
-      g.killTweensOf([overlay, panel, ...linkEls, foot]);
-      g.to([...linkEls, foot].filter(Boolean),
-        { autoAlpha: 0, y: -8, stagger: 0.03, duration: 0.2 });
-      g.to(panel, { clipPath: 'inset(0 0 100% 0)', duration: 0.35, ease: 'power3.in', delay: 0.15 });
-      g.to(overlay, { autoAlpha: 0, duration: 0.3, delay: 0.2 });
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    return pushEsc(() => setOpen(false));
-  }, [open]);
-
-  const toggle = () => setOpen(o => !o);
-
-  return (
-    <div className="arc-nav">
-      <div className={'arc-nav-overlay' + (open ? ' open' : '')}
-           ref={overlayRef} onClick={() => setOpen(false)} aria-hidden="true"></div>
-
-      <div className="arc-nav-panel" ref={panelRef} aria-hidden={!open}>
-        <nav className="arc-nav-links">
-          {items.map((it, i) => (
-            <a key={it.key} href={it.href}
-               className={'arc-nav-item' + (it.active ? ' is-active' : '')}>
-              <span className="arc-nav-item-idx">{String(i + 1).padStart(2, '0')}</span>
-              <span className="arc-nav-item-name">{NAV_LABELS[it.key]}</span>
-              <span className="arc-nav-item-arrow" aria-hidden="true">›</span>
-            </a>
-          ))}
-        </nav>
-        <div className="arc-nav-foot">
-          <div className="arc-nav-copy">© Yi-Ting Yang Tang 2025 · <a href="legal.html" style={{color:'inherit'}}>Privacy</a></div>
-        </div>
-      </div>
-
-      <header className={'arc-nav-bar' + (open ? ' is-open' : '')}>
-        <a className="arc-nav-logo" href="index.html">
-          <span className="arc-nav-logo-mark">YT</span>
-          <span className="arc-nav-logo-word">Yi-Ting Yang Tang</span>
-        </a>
-        <button className={'arc-nav-menu' + (open ? ' is-open' : '')}
-                onClick={toggle}
-                aria-expanded={open}
-                aria-label={open ? 'Close menu' : 'Open menu'}>
-          <span className="arc-nav-menu-bar b1"></span>
-          <span className="arc-nav-menu-bar b2"></span>
-          <span className="arc-nav-menu-bar b3"></span>
-        </button>
-      </header>
-    </div>
-  );
-}
-
 /* ============================== PAGE ================================== */
 function WorksPage() {
   const [works] = useState(() => window.WORKS_DATA || []);
@@ -785,7 +665,6 @@ function WorksPage() {
     <div className="arc-page">
       {Cursor && <Cursor />}
       <a className="skip-link" href="#main">Skip to content</a>
-      <SiteNav />
 
       <div className="arc-grid">
         {/* ------- LEFT: sidebar — scrolls manually, independent of the carousel ------- */}
