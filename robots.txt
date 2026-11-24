@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://yiting.vercel.app/sitemap.xml
+Sitemap: https://yiting-beryl.vercel.app/sitemap.xml
